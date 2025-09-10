@@ -272,52 +272,44 @@ function App() {
   };
 
   return (
-    <div className="container py-4">
+    <div className="container">
       {/* Header */}
-      <div className="text-center mb-4 py-4">
-        <h1 className="display-4 fw-bold text-primary mb-2">TpicQ</h1>
-        <p className="lead text-muted">Multi-Topic Practice Quiz Generator</p>
+      <div className="header">
+        <h1>TpicQ</h1>
+        <p>Multi-Topic Practice Quiz Generator</p>
       </div>
 
       {/* Error Alert */}
       {error && (
-        <div className="alert alert-danger alert-dismissible" role="alert">
-          {error}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setError("")}
-            aria-label="Close"
-          ></button>
+        <div className="alert alert-danger">
+          <span>{error}</span>
+          <button className="alert-close" onClick={() => setError("")}>
+            ×
+          </button>
         </div>
       )}
 
       {/* Success Alert */}
       {success && (
-        <div className="alert alert-success alert-dismissible" role="alert">
-          {success}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setSuccess("")}
-            aria-label="Close"
-          ></button>
+        <div className="alert alert-success">
+          <span>{success}</span>
+          <button className="alert-close" onClick={() => setSuccess("")}>
+            ×
+          </button>
         </div>
       )}
 
       {/* Topic Selection */}
-      <div className="card mb-4">
+      <div className="card">
         <div className="card-header">
-          <h5 className="card-title mb-0">Select Topics (Max 3)</h5>
+          <h3>Select Topics (Max 3)</h3>
         </div>
         <div className="card-body">
           {/* Manual Topic Entry */}
-          <form onSubmit={addManualTopic} className="mb-4 pb-3 border-bottom">
-            <div className="mb-3">
-              <label htmlFor="manualTopic" className="form-label fw-semibold">
-                Add Custom Topic
-              </label>
-              <div className="input-group">
+          <form onSubmit={addManualTopic} className="manual-topic-form">
+            <div className="form-group">
+              <label htmlFor="manualTopic">Add Custom Topic</label>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
                 <input
                   type="text"
                   className="form-control"
@@ -326,7 +318,7 @@ function App() {
                   value={manualTopic}
                   onChange={(e) => setManualTopic(e.target.value)}
                 />
-                <button type="submit" className="btn btn-outline-secondary">
+                <button type="submit" className="btn btn-secondary">
                   Add
                 </button>
               </div>
@@ -334,18 +326,14 @@ function App() {
           </form>
 
           {/* Predefined Topics */}
-          <div>
-            <label className="form-label fw-semibold">
-              Or choose from popular topics:
-            </label>
-            <div className="d-flex flex-wrap gap-2 mt-2">
+          <div style={{ marginTop: "1rem" }}>
+            <label>Or choose from popular topics:</label>
+            <div className="topic-list">
               {AVAILABLE_TOPICS.map((topic) => (
                 <button
                   key={topic}
-                  className={`btn btn-sm ${
-                    selectedTopics.includes(topic)
-                      ? "btn-primary"
-                      : "btn-outline-primary"
+                  className={`topic-badge ${
+                    selectedTopics.includes(topic) ? "selected" : ""
                   }`}
                   onClick={() => toggleTopicSelection(topic)}
                   disabled={
@@ -361,23 +349,18 @@ function App() {
 
           {/* Selected Topics Display */}
           {selectedTopics.length > 0 && (
-            <div className="mt-4">
-              <label className="form-label fw-semibold">
-                Selected Topics ({selectedTopics.length}/3):
-              </label>
-              <div className="d-flex flex-wrap gap-2 mt-2">
+            <div style={{ marginTop: "1rem" }}>
+              <label>Selected Topics ({selectedTopics.length}/3):</label>
+              <div className="selected-topics">
                 {selectedTopics.map((topic) => (
-                  <span
-                    key={topic}
-                    className="badge bg-primary fs-6 d-flex align-items-center gap-1"
-                  >
+                  <span key={topic} className="selected-topic">
                     {topic}
                     <button
-                      className="btn-close btn-close-white"
-                      style={{ fontSize: "0.7rem" }}
+                      className="remove-topic"
                       onClick={() => removeSelectedTopic(topic)}
-                      aria-label="Remove topic"
-                    ></button>
+                    >
+                      ×
+                    </button>
                   </span>
                 ))}
               </div>
@@ -387,18 +370,16 @@ function App() {
       </div>
 
       {/* Quiz Generator */}
-      <div className="card mb-4">
+      <div className="card">
         <div className="card-header">
-          <h5 className="card-title mb-0">Generate Quiz</h5>
+          <h3>Generate Quiz</h3>
         </div>
         <div className="card-body">
           <form onSubmit={generateQuiz}>
-            <div className="mb-3">
-              <label htmlFor="difficulty" className="form-label fw-semibold">
-                Difficulty Level
-              </label>
+            <div className="form-group">
+              <label htmlFor="difficulty">Difficulty Level</label>
               <select
-                className="form-select"
+                className="form-control"
                 id="difficulty"
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
@@ -418,21 +399,12 @@ function App() {
             </div>
             <button
               type="submit"
-              className="btn btn-success btn-lg"
+              className="btn btn-success"
               disabled={loading || selectedTopics.length === 0}
             >
-              {loading ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                  Generating Quiz...
-                </>
-              ) : (
-                `Generate Quiz (${getQuestionCount()} questions)`
-              )}
+              {loading
+                ? "Generating Quiz..."
+                : `Generate Quiz (${getQuestionCount()} questions)`}
             </button>
           </form>
         </div>
@@ -440,38 +412,38 @@ function App() {
 
       {/* Loading Spinner */}
       {loading && (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary mb-3" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="text-muted">
-            AI is generating your multi-topic quiz...
-          </p>
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p>AI is generating your multi-topic quiz...</p>
         </div>
       )}
 
       {/* Quiz Display */}
       {quiz && (
-        <div className="card mb-4">
-          <div className="card-header d-flex justify-content-between align-items-center flex-wrap">
-            <h5 className="card-title mb-0">{quiz.title}</h5>
-            <button className="btn btn-outline-secondary" onClick={resetQuiz}>
-              Start Over
-            </button>
+        <div className="card">
+          <div className="card-header">
+            <div className="quiz-header">
+              <h3>{quiz.title}</h3>
+              <div className="quiz-actions">
+                <button className="btn btn-secondary" onClick={resetQuiz}>
+                  Start Over
+                </button>
+              </div>
+            </div>
           </div>
           <div className="card-body">
-            <div className="d-flex flex-wrap gap-2 mb-4">
-              <span className="badge bg-info">
+            <div className="quiz-info">
+              <span className="badge badge-info">
                 Difficulty: {quiz.difficulty}
               </span>
-              <span className="badge bg-primary">
+              <span className="badge badge-primary">
                 {quiz.questions.length} Questions
               </span>
-              <span className="badge bg-success">
+              <span className="badge badge-success">
                 Topics: {quiz.topics.join(", ")}
               </span>
               {!showAnswers && (
-                <span className="badge bg-warning">
+                <span className="badge badge-warning">
                   Answered: {Object.keys(selectedAnswers).length}/
                   {quiz.questions.length}
                 </span>
@@ -479,56 +451,47 @@ function App() {
             </div>
 
             {quiz.questions.map((question, questionIndex) => (
-              <div key={questionIndex} className="card mb-3 border-light">
-                <div className="card-body">
-                  <div className="d-flex align-items-start mb-3">
-                    <span className="badge bg-secondary me-3 mt-1">
-                      Q{questionIndex + 1}
-                    </span>
-                    <div className="flex-grow-1">
-                      <h6 className="mb-1">{question.q}</h6>
-                      {question.topic && (
-                        <small className="text-muted fst-italic">
-                          Topic: {question.topic}
-                        </small>
-                      )}
-                    </div>
+              <div key={questionIndex} className="question-card">
+                <div className="question-header">
+                  <span className="question-number">Q{questionIndex + 1}</span>
+                  <div>
+                    <h5>{question.q}</h5>
+                    {question.topic && (
+                      <small className="topic-indicator">
+                        Topic: {question.topic}
+                      </small>
+                    )}
                   </div>
-                  <div className="row g-2">
-                    {question.options.map((option, optionIndex) => {
-                      const isSelected =
-                        selectedAnswers[questionIndex] === optionIndex;
-                      const isCorrect = optionIndex === question.answer_index;
-                      const shouldShowCorrect = showAnswers && isCorrect;
-                      const shouldShowWrong =
-                        showAnswers && isSelected && !isCorrect;
+                </div>
+                <div className="options-grid">
+                  {question.options.map((option, optionIndex) => {
+                    const isSelected =
+                      selectedAnswers[questionIndex] === optionIndex;
+                    const isCorrect = optionIndex === question.answer_index;
+                    const shouldShowCorrect = showAnswers && isCorrect;
+                    const shouldShowWrong =
+                      showAnswers && isSelected && !isCorrect;
 
-                      let buttonClass =
-                        "btn text-start w-100 d-flex align-items-center";
-                      if (shouldShowCorrect) buttonClass += " btn-success";
-                      else if (shouldShowWrong) buttonClass += " btn-danger";
-                      else if (isSelected && !showAnswers)
-                        buttonClass += " btn-primary";
-                      else buttonClass += " btn-outline-secondary";
+                    let className = "option-button";
+                    if (shouldShowCorrect) className += " correct";
+                    else if (shouldShowWrong) className += " wrong";
+                    else if (isSelected && !showAnswers)
+                      className += " selected";
 
-                      return (
-                        <div key={optionIndex} className="col-md-6">
-                          <button
-                            className={buttonClass}
-                            onClick={() =>
-                              selectAnswer(questionIndex, optionIndex)
-                            }
-                            disabled={showAnswers}
-                          >
-                            <span className="badge bg-dark me-2 flex-shrink-0">
-                              {String.fromCharCode(65 + optionIndex)}
-                            </span>
-                            <span className="flex-grow-1">{option}</span>
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                    return (
+                      <button
+                        key={optionIndex}
+                        className={className}
+                        onClick={() => selectAnswer(questionIndex, optionIndex)}
+                        disabled={showAnswers}
+                      >
+                        <span className="option-letter">
+                          {String.fromCharCode(65 + optionIndex)}
+                        </span>
+                        <span className="option-text">{option}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -536,9 +499,9 @@ function App() {
             {/* Submit Button at the end */}
             {!showAnswers &&
               Object.keys(selectedAnswers).length === quiz.questions.length && (
-                <div className="text-center py-4 bg-light rounded">
+                <div className="submit-section">
                   <button
-                    className="btn btn-primary btn-lg px-5"
+                    className="btn btn-primary btn-large"
                     onClick={submitQuiz}
                   >
                     Submit Quiz
@@ -547,52 +510,45 @@ function App() {
               )}
 
             {showAnswers && (
-              <div className="bg-light rounded p-4 mt-4">
-                <h5 className="mb-4">Quiz Results</h5>
-                <div className="row g-3 mb-4">
-                  <div className="col-md-4">
-                    <div className="text-center bg-white p-3 rounded">
-                      <div className="display-6 fw-bold text-primary">
-                        {
-                          quiz.questions.filter(
-                            (q, i) => selectedAnswers[i] === q.answer_index
-                          ).length
-                        }
-                      </div>
-                      <div className="text-muted">Correct</div>
-                    </div>
+              <div className="results-section">
+                <h4>Quiz Results</h4>
+                <div className="score-display">
+                  <div className="score-item">
+                    <span className="score-number">
+                      {
+                        quiz.questions.filter(
+                          (q, i) => selectedAnswers[i] === q.answer_index
+                        ).length
+                      }
+                    </span>
+                    <span className="score-label">Correct</span>
                   </div>
-                  <div className="col-md-4">
-                    <div className="text-center bg-white p-3 rounded">
-                      <div className="display-6 fw-bold text-danger">
-                        {quiz.questions.length -
-                          quiz.questions.filter(
-                            (q, i) => selectedAnswers[i] === q.answer_index
-                          ).length}
-                      </div>
-                      <div className="text-muted">Incorrect</div>
-                    </div>
+                  <div className="score-item">
+                    <span className="score-number">
+                      {quiz.questions.length -
+                        quiz.questions.filter(
+                          (q, i) => selectedAnswers[i] === q.answer_index
+                        ).length}
+                    </span>
+                    <span className="score-label">Incorrect</span>
                   </div>
-                  <div className="col-md-4">
-                    <div className="text-center bg-white p-3 rounded">
-                      <div className="display-6 fw-bold text-success">
-                        {Math.round(
-                          (quiz.questions.filter(
-                            (q, i) => selectedAnswers[i] === q.answer_index
-                          ).length /
-                            quiz.questions.length) *
-                            100
-                        )}
-                        %
-                      </div>
-                      <div className="text-muted">Score</div>
-                    </div>
+                  <div className="score-item">
+                    <span className="score-number">
+                      {Math.round(
+                        (quiz.questions.filter(
+                          (q, i) => selectedAnswers[i] === q.answer_index
+                        ).length /
+                          quiz.questions.length) *
+                          100
+                      )}
+                      %
+                    </span>
+                    <span className="score-label">Score</span>
                   </div>
                 </div>
-                <div className="progress mb-4" style={{ height: "10px" }}>
+                <div className="progress-bar">
                   <div
-                    className="progress-bar bg-success"
-                    role="progressbar"
+                    className="progress-fill"
                     style={{
                       width: `${
                         (quiz.questions.filter(
@@ -602,22 +558,10 @@ function App() {
                         100
                       }%`,
                     }}
-                    aria-valuenow={
-                      (quiz.questions.filter(
-                        (q, i) => selectedAnswers[i] === q.answer_index
-                      ).length /
-                        quiz.questions.length) *
-                      100
-                    }
-                    aria-valuemin="0"
-                    aria-valuemax="100"
                   ></div>
                 </div>
-                <div className="text-center">
-                  <button
-                    className="btn btn-primary btn-lg"
-                    onClick={resetQuiz}
-                  >
+                <div className="result-actions">
+                  <button className="btn btn-primary" onClick={resetQuiz}>
                     Start New Quiz
                   </button>
                 </div>
@@ -627,8 +571,13 @@ function App() {
         </div>
       )}
 
-      <footer className="text-center mt-5 py-4">
-        <small className="text-muted">made with ☕ and ❤️ by om kumar</small>
+      <footer
+        className="text-center"
+        style={{ marginTop: "3rem", padding: "1rem" }}
+      >
+        <small className="text-muted">
+          Powered by FastAPI, React, and Gemini AI
+        </small>
       </footer>
     </div>
   );
