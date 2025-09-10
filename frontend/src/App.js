@@ -86,47 +86,8 @@ function App() {
   };
 
   const getQuestionCount = () => {
-    const baseQuestions = {
-      easy: 3,
-      medium: 5,
-      hard: 7,
-    };
-
-    const base = baseQuestions[difficulty] || 3;
-    return base * selectedTopics.length;
-  };
-
-  const generateMockQuiz = () => {
-    const questionCount = getQuestionCount();
-    const questions = [];
-
-    for (let i = 0; i < questionCount; i++) {
-      const topicIndex = i % selectedTopics.length;
-      const currentTopic = selectedTopics[topicIndex];
-
-      questions.push({
-        q: `${
-          difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
-        } question ${
-          Math.floor(i / selectedTopics.length) + 1
-        } about ${currentTopic}`,
-        options: [
-          `Option A for ${currentTopic}`,
-          `Option B for ${currentTopic}`,
-          `Option C for ${currentTopic}`,
-          `Option D for ${currentTopic}`,
-        ],
-        answer_index: i % 4,
-        topic: currentTopic,
-      });
-    }
-
-    return {
-      title: `Multi-Topic Quiz: ${selectedTopics.join(", ")}`,
-      difficulty: difficulty,
-      topics: selectedTopics,
-      questions: questions,
-    };
+    // Each topic generates 10 questions regardless of difficulty
+    return 10 * selectedTopics.length;
   };
 
   const generateQuiz = async (e) => {
@@ -144,61 +105,40 @@ function App() {
     try {
       // For multiple topics, we'll create a combined quiz by calling the API for each topic
       const questionCount = getQuestionCount();
-      const questionsPerTopic = Math.ceil(
-        questionCount / selectedTopics.length
-      );
 
       const topicPromises = selectedTopics.map(async (topic) => {
+        // First, try to create the topic in the backend (it will ignore if exists)
         try {
-          // First, try to create the topic in the backend (it will ignore if exists)
-          try {
-            await axios.post(`${API_BASE}/topics`, { name: topic });
-          } catch (topicError) {
-            // Ignore if topic already exists
+          await axios.post(`${API_BASE}/topics`, { name: topic });
+        } catch (topicError) {
+          // Ignore if topic already exists (400 error is expected)
+          if (topicError.response?.status !== 400) {
+            throw new Error(
+              `Failed to create topic "${topic}": ${topicError.message}`
+            );
           }
-
-          // Get the topic ID
-          const topicsResponse = await axios.get(`${API_BASE}/topics`);
-          const topicData = topicsResponse.data.find(
-            (t) => t.name.toLowerCase() === topic.toLowerCase()
-          );
-
-          if (!topicData) {
-            throw new Error(`Topic "${topic}" not found`);
-          }
-
-          // Generate quiz for this topic
-          const quizResponse = await axios.post(
-            `${API_BASE}/topics/${topicData.id}/generate-quiz`,
-            { difficulty }
-          );
-
-          return {
-            topic: topic,
-            questions: quizResponse.data.content.questions.slice(
-              0,
-              questionsPerTopic
-            ),
-          };
-        } catch (error) {
-          console.warn(`Failed to generate quiz for topic "${topic}":`, error);
-          // Return mock questions as fallback
-          return {
-            topic: topic,
-            questions: Array.from({ length: questionsPerTopic }, (_, i) => ({
-              q: `${
-                difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
-              } question ${i + 1} about ${topic}`,
-              options: [
-                `Option A for ${topic}`,
-                `Option B for ${topic}`,
-                `Option C for ${topic}`,
-                `Option D for ${topic}`,
-              ],
-              answer_index: i % 4,
-            })),
-          };
         }
+
+        // Get the topic ID
+        const topicsResponse = await axios.get(`${API_BASE}/topics`);
+        const topicData = topicsResponse.data.find(
+          (t) => t.name.toLowerCase() === topic.toLowerCase()
+        );
+
+        if (!topicData) {
+          throw new Error(`Topic "${topic}" not found after creation`);
+        }
+
+        // Generate quiz for this topic
+        const quizResponse = await axios.post(
+          `${API_BASE}/topics/${topicData.id}/generate-quiz`,
+          { difficulty }
+        );
+
+        return {
+          topic: topic,
+          questions: quizResponse.data.content.questions, // Use all 10 questions
+        };
       });
 
       const topicResults = await Promise.all(topicPromises);
@@ -230,14 +170,22 @@ function App() {
       );
     } catch (err) {
       console.error("Quiz generation error:", err);
-      setError(
-        "Error generating quiz: " + (err.response?.data?.detail || err.message)
-      );
 
-      // Fallback to mock quiz if API fails
-      const mockQuiz = generateMockQuiz();
-      setQuiz(mockQuiz);
-      setSuccess("Using sample questions (API unavailable)");
+      // Provide more specific error messages
+      let errorMessage = "AI failed to respond. Please try again later.";
+
+      if (err.code === "NETWORK_ERROR" || !navigator.onLine) {
+        errorMessage = "Network error. Please check your internet connection.";
+      } else if (err.response?.status === 404) {
+        errorMessage =
+          "API endpoint not found. Please check if the server is running.";
+      } else if (err.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      } else if (err.response?.data?.detail) {
+        errorMessage = `API Error: ${err.response.data.detail}`;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -406,13 +354,13 @@ function App() {
               >
                 <option value="">Choose difficulty...</option>
                 <option value="easy">
-                  Easy ({selectedTopics.length * 3} questions)
+                  Easy (Basic concepts & definitions)
                 </option>
                 <option value="medium">
-                  Medium ({selectedTopics.length * 5} questions)
+                  Medium (Applied knowledge & analysis)
                 </option>
                 <option value="hard">
-                  Hard ({selectedTopics.length * 7} questions)
+                  Hard (Complex scenarios & critical thinking)
                 </option>
               </select>
             </div>
@@ -431,7 +379,7 @@ function App() {
                   Generating Quiz...
                 </>
               ) : (
-                `Generate Quiz (${getQuestionCount()} questions)`
+                `Generate Quiz (${selectedTopics.length * 10} questions)`
               )}
             </button>
           </form>
