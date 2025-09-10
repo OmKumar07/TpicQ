@@ -13,6 +13,7 @@ A modern React-based frontend for the TpicQ quiz generator app.
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 16+ installed
 - Backend server running on http://127.0.0.1:8000
 
@@ -54,12 +55,13 @@ npm run build
 The frontend communicates with the FastAPI backend:
 
 - `GET /topics` - Load available topics
-- `POST /topics` - Create new topics  
+- `POST /topics` - Create new topics
 - `POST /topics/{id}/generate-quiz` - Generate quiz content
 
 ## Styling
 
 Uses Bootstrap 5 for responsive design with custom CSS for:
+
 - Quiz question styling
 - Interactive answer selection
 - Loading states

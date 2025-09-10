@@ -24,9 +24,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files (frontend)
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
-
 # Mount React build files (when available)
 try:
     app.mount("/react", StaticFiles(directory="frontend-react/build", html=True), name="react")
@@ -55,17 +52,23 @@ def get_topics(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 @app.post("/topics/{topic_id}/generate-quiz")
 def generate_quiz_endpoint(topic_id: int, quiz_request: schemas.QuizGenerate, db: Session = Depends(get_db)):
     """Generate a quiz for a topic using Gemini API"""
+    print(f"🎯 Quiz generation requested for topic {topic_id}, difficulty: {quiz_request.difficulty}")
+    
     # Check if topic exists
     topic = crud.get_topic(db, topic_id=topic_id)
     if not topic:
         raise HTTPException(status_code=404, detail="Topic not found")
+    
+    print(f"📚 Topic found: {topic.name}")
     
     # Validate difficulty
     if quiz_request.difficulty not in ["easy", "medium", "hard"]:
         raise HTTPException(status_code=400, detail="Difficulty must be: easy, medium, or hard")
     
     # Generate quiz using Gemini API (with fallback to mock)
+    print(f"🤖 Calling generate_quiz function...")
     quiz_content = generate_quiz(topic.name, quiz_request.difficulty)
+    print(f"✅ Quiz generation completed!")
     
     # Save quiz to database
     saved_quiz = crud.create_quiz(

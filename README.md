@@ -6,14 +6,14 @@ A simple webapp for generating practice quizzes using the Gemini API. Users can 
 
 - **Backend**: FastAPI + Python
 - **Database**: SQLite (with PostgreSQL support)
-- **ORM**: SQLAlchemy + Alembic for migrations  
+- **ORM**: SQLAlchemy + Alembic for migrations
 - **Frontend**: HTML + Bootstrap + Vanilla JavaScript
 - **API Integration**: Gemini API for quiz generation
 
 ## Features
 
 - ✅ Add and manage topics
-- ✅ Generate quizzes with AI (Gemini API) 
+- ✅ Generate quizzes with AI (Gemini API)
 - ✅ Three difficulty levels: Easy, Medium, Hard
 - ✅ Save and retrieve generated quizzes
 - ✅ Simple web interface (HTML + React versions)
@@ -23,11 +23,12 @@ A simple webapp for generating practice quizzes using the Gemini API. Users can 
 ## 🔑 **Setting Up Gemini API Key**
 
 ### **Option 1: Environment Variable (Recommended)**
+
 ```bash
 # PowerShell (Windows)
 $env:GEMINI_API_KEY="your_actual_gemini_api_key_here"
 
-# Command Prompt (Windows)  
+# Command Prompt (Windows)
 set GEMINI_API_KEY=your_actual_gemini_api_key_here
 
 # Then restart the server
@@ -35,6 +36,7 @@ python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
 ### **Option 2: Create a .env file**
+
 ```bash
 # Copy the example file
 cp .env.example .env
@@ -44,6 +46,7 @@ GEMINI_API_KEY=your_actual_gemini_api_key_here
 ```
 
 ### **Getting a Gemini API Key**
+
 1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Sign in with your Google account
 3. Click "Create API Key"
@@ -54,17 +57,20 @@ GEMINI_API_KEY=your_actual_gemini_api_key_here
 ## Quick Start
 
 ### 1. Create Virtual Environment
+
 ```bash
 python -m venv venv
 venv\Scripts\activate
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 pip install -r backend/requirements.txt
 ```
 
 ### 3. Set Environment Variables (Optional)
+
 ```bash
 # Command Prompt
 set GEMINI_API_KEY=your_gemini_api_key_here
@@ -77,6 +83,7 @@ $env:DATABASE_URL="postgresql://user:pass@localhost/dbname"
 ```
 
 ### 4. Start the Application
+
 ```bash
 # Navigate to project root
 cd c:\path\to\TpicQ
@@ -94,6 +101,7 @@ python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 http://127.0.0.1:8000/static/index.html
 
 **Option B: React Interface (Recommended)**
+
 ```bash
 # Install Node.js dependencies
 cd frontend-react
@@ -111,23 +119,27 @@ npm run build
 ## API Endpoints
 
 ### Health Check
+
 - `GET /health` - Returns server status
 
 ### Topics
+
 - `GET /topics` - List all topics
 - `POST /topics` - Create a new topic
   ```json
-  {"name": "Arrays"}
+  { "name": "Arrays" }
   ```
 
-### Quizzes  
+### Quizzes
+
 - `POST /topics/{topic_id}/generate-quiz` - Generate quiz for topic
   ```json
-  {"difficulty": "easy"}
+  { "difficulty": "easy" }
   ```
 - `GET /topics/{topic_id}/quizzes` - List saved quizzes for topic
 
 ### API Documentation
+
 Visit http://127.0.0.1:8000/docs for interactive API documentation.
 
 ## Testing API with curl
@@ -148,11 +160,11 @@ curl http://127.0.0.1:8000/topics/1/quizzes
 
 ## Environment Variables
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `GEMINI_API_KEY` | Your Gemini API key for quiz generation | None | No (uses mock data) |
-| `GEMINI_API_URL` | Gemini API endpoint | Google's default | No |
-| `DATABASE_URL` | Database connection string | `sqlite:///./data/dev.db` | No |
+| Variable         | Description                             | Default                   | Required            |
+| ---------------- | --------------------------------------- | ------------------------- | ------------------- |
+| `GEMINI_API_KEY` | Your Gemini API key for quiz generation | None                      | No (uses mock data) |
+| `GEMINI_API_URL` | Gemini API endpoint                     | Google's default          | No                  |
+| `DATABASE_URL`   | Database connection string              | `sqlite:///./data/dev.db` | No                  |
 
 ## Project Structure
 
@@ -184,12 +196,14 @@ TpicQ/
 ## Development
 
 ### Running in Development Mode
+
 ```bash
 # With auto-reload
 uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ### Database
+
 - The SQLite database is created automatically in `data/dev.db`
 - Tables are created automatically when the server starts
 - To reset the database, simply delete the `data/dev.db` file
@@ -207,7 +221,9 @@ uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ## Troubleshooting
 
 ### Port Already in Use
+
 If you get a port binding error:
+
 ```bash
 # Kill existing Python processes
 taskkill /F /IM python.exe
@@ -217,9 +233,11 @@ uvicorn backend.main:app --host 127.0.0.1 --port 8001
 ```
 
 ### CORS Issues
+
 If you access the frontend from a different domain/port, update the CORS settings in `backend/main.py`.
 
 ### Database Issues
+
 Delete `data/dev.db` and restart the server to recreate the database with fresh tables.
 
 ## Contributing
