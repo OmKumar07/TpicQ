@@ -16,8 +16,40 @@ A simple webapp for generating practice quizzes using the Gemini API. Users can 
 - ✅ Generate quizzes with AI (Gemini API) 
 - ✅ Three difficulty levels: Easy, Medium, Hard
 - ✅ Save and retrieve generated quizzes
-- ✅ Simple web interface
+- ✅ Simple web interface (HTML + React versions)
+- ✅ Interactive quiz taking with scoring
 - ✅ Mock fallback when Gemini API key not provided
+
+## 🔑 **Setting Up Gemini API Key**
+
+### **Option 1: Environment Variable (Recommended)**
+```bash
+# PowerShell (Windows)
+$env:GEMINI_API_KEY="your_actual_gemini_api_key_here"
+
+# Command Prompt (Windows)  
+set GEMINI_API_KEY=your_actual_gemini_api_key_here
+
+# Then restart the server
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+### **Option 2: Create a .env file**
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit .env and add your key:
+GEMINI_API_KEY=your_actual_gemini_api_key_here
+```
+
+### **Getting a Gemini API Key**
+1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy the key and use it in step 1 or 2 above
+
+**✅ Will it work after that?** YES! The app will automatically switch from mock data to real AI-generated quizzes.
 
 ## Quick Start
 
@@ -57,7 +89,24 @@ python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
 ### 5. Open the Web Interface
-Open your browser and go to: http://127.0.0.1:8000/static/index.html
+
+**Option A: Basic HTML Interface**
+http://127.0.0.1:8000/static/index.html
+
+**Option B: React Interface (Recommended)**
+```bash
+# Install Node.js dependencies
+cd frontend-react
+npm install
+
+# Start React development server
+npm start
+# Opens at http://localhost:3000
+
+# OR build for production and serve via FastAPI
+npm run build
+# Then visit http://127.0.0.1:8000/react
+```
 
 ## API Endpoints
 
@@ -119,9 +168,16 @@ TpicQ/
 │   │   └── gemini_client.py # Gemini API integration
 │   └── requirements.txt     # Python dependencies
 ├── frontend/
-│   └── index.html           # Web interface
+│   └── index.html           # Basic HTML interface
+├── frontend-react/          # React interface (recommended)
+│   ├── src/
+│   │   ├── App.js          # Main React component
+│   │   └── index.js        # React entry point
+│   ├── package.json        # Node.js dependencies
+│   └── README.md           # React-specific docs
 ├── data/
 │   └── dev.db              # SQLite database (auto-created)
+├── .env.example            # Environment variables template
 └── README.md
 ```
 

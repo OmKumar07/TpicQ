@@ -2,9 +2,13 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
 from .db import engine, get_db
 from . import models, crud, schemas
 from .services.gemini_client import generate_quiz
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -22,6 +26,12 @@ app.add_middleware(
 
 # Mount static files (frontend)
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
+# Mount React build files (when available)
+try:
+    app.mount("/react", StaticFiles(directory="frontend-react/build", html=True), name="react")
+except Exception:
+    pass  # React build not available yet
 
 @app.get("/health")
 def health():
