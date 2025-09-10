@@ -628,7 +628,7 @@ function App() {
       )}
 
       <footer className="text-center mt-5 py-4">
-        <small className="text-muted">made with ☕ and ❤️ by om kumar</small>
+        <small className="text-muted">made with ☕ and ❤️ by Om</small>
       </footer>
     </div>
   );
