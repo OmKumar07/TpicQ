@@ -65,10 +65,18 @@ def generate_quiz_endpoint(topic_id: int, quiz_request: schemas.QuizGenerate, db
     if quiz_request.difficulty not in ["easy", "medium", "hard"]:
         raise HTTPException(status_code=400, detail="Difficulty must be: easy, medium, or hard")
     
-    # Generate quiz using Gemini API (with fallback to mock)
+    # Generate quiz using Gemini API
     print(f"🤖 Calling generate_quiz function...")
-    quiz_content = generate_quiz(topic.name, quiz_request.difficulty)
-    print(f"✅ Quiz generation completed!")
+    try:
+        quiz_content = generate_quiz(topic.name, quiz_request.difficulty)
+        print(f"✅ Quiz generation completed!")
+    except Exception as e:
+        print(f"❌ Quiz generation failed: {e}")
+        # Return a proper error response instead of crashing
+        raise HTTPException(
+            status_code=503, 
+            detail=f"Quiz generation service temporarily unavailable: {str(e)}"
+        )
     
     # Save quiz to database
     saved_quiz = crud.create_quiz(
