@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TpicQ - Practice Quiz Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .quiz-question {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            background-color: #f8f9fa;
+        }
+        .option {
+            margin: 0.5rem 0;
+        }
+        .correct-answer {
+            font-weight: bold;
+            color: #198754;
+        }
+        .loading {
+            text-align: center;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <h1 class="text-center mb-4">TpicQ - Practice Quiz Generator</h1>
+                <p class="text-center text-muted">Add topics and generate practice quizzes using AI</p>
+                
+                <!-- Add Topic Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Add New Topic</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="topicForm">
+                            <div class="mb-3">
+                                <label for="topicName" class="form-label">Topic Name</label>
+                                <input type="text" class="form-control" id="topicName" placeholder="e.g., Arrays, Data Structures" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Topic</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Topics List -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Available Topics</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="topicsList">
+                            <p class="text-muted">Loading topics...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quiz Generation Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Generate Quiz</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="quizForm">
+                            <div class="mb-3">
+                                <label for="selectedTopic" class="form-label">Select Topic</label>
+                                <select class="form-select" id="selectedTopic" required>
+                                    <option value="">Choose a topic...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="difficulty" class="form-label">Difficulty Level</label>
+                                <select class="form-select" id="difficulty" required>
+                                    <option value="">Choose difficulty...</option>
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success">Generate Quiz</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Quiz Display Section -->
+                <div id="quizSection" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 id="quizTitle">Generated Quiz</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="quizContent"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="loading" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Generating quiz...</p>
+                </div>
+
+                <!-- Error Messages -->
+                <div id="errorAlert" class="alert alert-danger" style="display: none;"></div>
+                <div id="successAlert" class="alert alert-success" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        
+        // DOM elements
+        const topicForm = document.getElementById('topicForm');
+        const quizForm = document.getElementById('quizForm');
+        const topicsList = document.getElementById('topicsList');
+        const selectedTopicSelect = document.getElementById('selectedTopic');
+        const quizSection = document.getElementById('quizSection');
+        const quizContent = document.getElementById('quizContent');
+        const quizTitle = document.getElementById('quizTitle');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorAlert = document.getElementById('errorAlert');
+        const successAlert = document.getElementById('successAlert');
+
+        // Utility functions
+        function showError(message) {
+            errorAlert.textContent = message;
+            errorAlert.style.display = 'block';
+            setTimeout(() => errorAlert.style.display = 'none', 5000);
+        }
+
+        function showSuccess(message) {
+            successAlert.textContent = message;
+            successAlert.style.display = 'block';
+            setTimeout(() => successAlert.style.display = 'none', 3000);
+        }
+
+        function hideQuiz() {
+            quizSection.style.display = 'none';
+        }
+
+        function showLoading() {
+            loadingSpinner.style.display = 'block';
+        }
+
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+        }
+
+        // API functions
+        async function fetchTopics() {
+            try {
+                const response = await fetch(`${API_BASE}/topics`);
+                if (!response.ok) throw new Error('Failed to fetch topics');
+                return await response.json();
+            } catch (error) {
+                showError('Error fetching topics: ' + error.message);
+                return [];
+            }
+        }
+
+        async function createTopic(name) {
+            try {
+                const response = await fetch(`${API_BASE}/topics`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to create topic');
+                }
+                return await response.json();
+            } catch (error) {
+                showError('Error creating topic: ' + error.message);
+                return null;
+            }
+        }
+
+        async function generateQuiz(topicId, difficulty) {
+            try {
+                const response = await fetch(`${API_BASE}/topics/${topicId}/generate-quiz`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ difficulty })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to generate quiz');
+                }
+                return await response.json();
+            } catch (error) {
+                showError('Error generating quiz: ' + error.message);
+                return null;
+            }
+        }
+
+        // UI functions
+        function updateTopicsList(topics) {
+            if (topics.length === 0) {
+                topicsList.innerHTML = '<p class="text-muted">No topics available. Add some topics to get started!</p>';
+                selectedTopicSelect.innerHTML = '<option value="">No topics available</option>';
+                return;
+            }
+
+            // Update topics list display
+            topicsList.innerHTML = topics.map(topic => 
+                `<span class="badge bg-secondary me-2 mb-2">${topic.name}</span>`
+            ).join('');
+
+            // Update select dropdown
+            selectedTopicSelect.innerHTML = '<option value="">Choose a topic...</option>' +
+                topics.map(topic => 
+                    `<option value="${topic.id}">${topic.name}</option>`
+                ).join('');
+        }
+
+        function displayQuiz(quizData) {
+            const { content } = quizData;
+            quizTitle.textContent = content.title;
+            
+            const questionsHtml = content.questions.map((question, index) => `
+                <div class="quiz-question">
+                    <h5>Question ${index + 1}</h5>
+                    <p><strong>${question.q}</strong></p>
+                    <div class="options">
+                        ${question.options.map((option, optIndex) => `
+                            <div class="option ${optIndex === question.answer_index ? 'correct-answer' : ''}">
+                                ${String.fromCharCode(65 + optIndex)}. ${option}
+                                ${optIndex === question.answer_index ? ' ✓' : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            quizContent.innerHTML = questionsHtml;
+            quizSection.style.display = 'block';
+            
+            // Scroll to quiz
+            quizSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Event handlers
+        topicForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('topicName').value.trim();
+            
+            if (!name) {
+                showError('Please enter a topic name');
+                return;
+            }
+
+            const result = await createTopic(name);
+            if (result) {
+                showSuccess(`Topic "${name}" created successfully!`);
+                document.getElementById('topicName').value = '';
+                loadTopics();
+            }
+        });
+
+        quizForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const topicId = selectedTopicSelect.value;
+            const difficulty = document.getElementById('difficulty').value;
+            
+            if (!topicId || !difficulty) {
+                showError('Please select both topic and difficulty');
+                return;
+            }
+
+            hideQuiz();
+            showLoading();
+            
+            const result = await generateQuiz(topicId, difficulty);
+            hideLoading();
+            
+            if (result) {
+                displayQuiz(result);
+                showSuccess('Quiz generated successfully!');
+            }
+        });
+
+        // Initialize
+        async function loadTopics() {
+            const topics = await fetchTopics();
+            updateTopicsList(topics);
+        }
+
+        // Load topics on page load
+        loadTopics();
+    </script>
+</body>
+</html>
