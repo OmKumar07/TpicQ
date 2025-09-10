@@ -63,6 +63,32 @@ def generate_quiz_endpoint(topic_id: int, quiz_request: schemas.QuizGenerate, db
     
     return {"message": "Quiz generated successfully", "quiz_id": saved_quiz.id, "content": quiz_content}
 
+@app.get("/topics/{topic_id}/quizzes")
+def get_topic_quizzes(topic_id: int, db: Session = Depends(get_db)):
+    """Get all saved quizzes for a topic"""
+    # Check if topic exists
+    topic = crud.get_topic(db, topic_id=topic_id)
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+    
+    # Get all quizzes for this topic
+    quizzes = crud.get_quizzes_by_topic(db, topic_id=topic_id)
+    
+    # Format response
+    quiz_list = []
+    for quiz in quizzes:
+        quiz_list.append({
+            "id": quiz.id,
+            "difficulty": quiz.difficulty,
+            "created_at": quiz.created_at,
+            "content": quiz.content
+        })
+    
+    return {
+        "topic": {"id": topic.id, "name": topic.name},
+        "quizzes": quiz_list
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
