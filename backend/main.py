@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from .db import engine, get_db
 from . import models, crud, schemas
+from .services.gemini_client import generate_quiz
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -37,28 +38,9 @@ def get_topics(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     topics = crud.get_topics(db, skip=skip, limit=limit)
     return topics
 
-def mock_quiz(topic_name: str, difficulty: str):
-    """Mock quiz generator for testing"""
-    return {
-        "title": f"Quiz: {topic_name}",
-        "difficulty": difficulty,
-        "questions": [
-            {
-                "q": f"What is an important concept in {topic_name}?",
-                "options": ["Option A", "Option B", "Option C", "Option D"],
-                "answer_index": 1
-            },
-            {
-                "q": f"Which statement about {topic_name} is correct?",
-                "options": ["Statement 1", "Statement 2", "Statement 3", "Statement 4"],
-                "answer_index": 2
-            }
-        ]
-    }
-
 @app.post("/topics/{topic_id}/generate-quiz")
-def generate_quiz(topic_id: int, quiz_request: schemas.QuizGenerate, db: Session = Depends(get_db)):
-    """Generate a quiz for a topic (currently returns mock data)"""
+def generate_quiz_endpoint(topic_id: int, quiz_request: schemas.QuizGenerate, db: Session = Depends(get_db)):
+    """Generate a quiz for a topic using Gemini API"""
     # Check if topic exists
     topic = crud.get_topic(db, topic_id=topic_id)
     if not topic:
@@ -68,8 +50,8 @@ def generate_quiz(topic_id: int, quiz_request: schemas.QuizGenerate, db: Session
     if quiz_request.difficulty not in ["easy", "medium", "hard"]:
         raise HTTPException(status_code=400, detail="Difficulty must be: easy, medium, or hard")
     
-    # Generate mock quiz
-    quiz_content = mock_quiz(topic.name, quiz_request.difficulty)
+    # Generate quiz using Gemini API (with fallback to mock)
+    quiz_content = generate_quiz(topic.name, quiz_request.difficulty)
     
     # Save quiz to database
     saved_quiz = crud.create_quiz(
