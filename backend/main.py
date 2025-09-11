@@ -25,23 +25,28 @@ app = FastAPI(title="TpicQ API", version="1.0.0")
 @app.middleware("http")
 async def cors_handler(request: Request, call_next):
     response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    response.headers["Access-Control-Allow-Origin"] = frontend_url
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "*"
     response.headers["Access-Control-Max-Age"] = "3600"
     return response
 
 # Add CORS middleware for frontend
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        frontend_url,
+        backend_url,
         "https://topicq.netlify.app",
         "https://tpicq.onrender.com",
-        "*"  # Temporary fallback for debugging
     ],
-    allow_credentials=False,  # Changed to False to avoid credential issues
+    allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -63,10 +68,11 @@ def health():
 @app.options("/{rest_of_path:path}")
 async def preflight_handler(request: Request, rest_of_path: str):
     """Handle CORS preflight requests"""
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
     return Response(
         status_code=200,
         headers={
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": frontend_url,
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "*",
         }
