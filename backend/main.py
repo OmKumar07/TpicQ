@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
+import os
 from .db import engine, get_db
 from . import models, crud, schemas
 from .services.gemini_client import generate_quiz
@@ -24,11 +26,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount React build files (when available)
-try:
-    app.mount("/react", StaticFiles(directory="frontend-react/build", html=True), name="react")
-except Exception:
-    pass  # React build not available yet
+# Mount React build files for production
+static_dir = "backend/static"
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# Serve React app on root path in production
+@app.get("/")
+async def serve_react_app():
+    """Serve the React application"""
+    index_file = os.path.join(static_dir, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+    return {"message": "TpicQ API is running! Frontend not built yet."}
 
 @app.get("/health")
 def health():
