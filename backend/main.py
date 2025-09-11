@@ -217,23 +217,56 @@ def generate_quiz_endpoint(topic_id: int, quiz_request: schemas.QuizGenerate, db
     try:
         quiz_content = generate_quiz(topic.name, quiz_request.difficulty)
         print(f"✅ Quiz generation completed!")
+        success_message = "Quiz generated successfully"
+            
     except Exception as e:
         print(f"❌ Quiz generation failed: {e}")
-        # Return a proper error response instead of crashing
+        
+        # Provide user-friendly error messages
+        error_message = "Quiz generation service temporarily unavailable"
+        
+        if "403" in str(e) or "permission" in str(e).lower() or "disabled" in str(e).lower():
+            error_message = "AI service access denied. Please check API key permissions and try again later."
+        elif "503" in str(e) or "overloaded" in str(e).lower():
+            error_message = "AI service is overloaded. Please try again in a few minutes."
+        elif "429" in str(e) or "quota" in str(e).lower():
+            error_message = "API quota limit exceeded. Please try again tomorrow or contact support."
+        elif "timeout" in str(e).lower():
+            error_message = "AI service timeout. Please try again."
+        elif "network" in str(e).lower():
+            error_message = "Network connectivity issue. Please check your connection."
+        elif "no gemini api keys" in str(e).lower():
+            error_message = "AI service configuration error. Please contact support."
+        
         raise HTTPException(
             status_code=503, 
-            detail=f"Quiz generation service temporarily unavailable: {str(e)}"
+            detail=error_message
         )
     
     # Save quiz to database
-    saved_quiz = crud.create_quiz(
-        db=db,
-        topic_id=topic_id,
-        difficulty=quiz_request.difficulty,
-        content_json=quiz_content
-    )
-    
-    return {"message": "Quiz generated successfully", "quiz_id": saved_quiz.id, "content": quiz_content}
+    try:
+        saved_quiz = crud.create_quiz(
+            db=db,
+            topic_id=topic_id,
+            difficulty=quiz_request.difficulty,
+            content_json=quiz_content
+        )
+        
+        return {
+            "message": success_message, 
+            "quiz_id": saved_quiz.id, 
+            "content": quiz_content,
+            "status": "success"
+        }
+    except Exception as e:
+        print(f"❌ Failed to save quiz to database: {e}")
+        # Still return the quiz content even if saving fails
+        return {
+            "message": f"{success_message} (note: quiz not saved to database)", 
+            "quiz_id": None, 
+            "content": quiz_content,
+            "status": "partial_success"
+        }
 
 @app.get("/topics/{topic_id}/quizzes")
 def get_topic_quizzes(topic_id: int, db: Session = Depends(get_db)):

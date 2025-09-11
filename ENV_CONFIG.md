@@ -5,6 +5,7 @@ This project uses environment variables to manage different configurations for d
 ## Backend Configuration
 
 ### Development (.env)
+
 ```properties
 # Frontend and Backend URLs for development
 FRONTEND_URL=http://localhost:3000
@@ -12,6 +13,7 @@ BACKEND_URL=http://localhost:8000
 ```
 
 ### Production (.env.production)
+
 ```properties
 # Frontend and Backend URLs for production
 FRONTEND_URL=https://topicq.netlify.app
@@ -28,11 +30,13 @@ BACKEND_URL=https://tpicq.onrender.com
 ## Frontend Configuration
 
 ### Development (frontend/.env)
+
 ```properties
 REACT_APP_BACKEND_URL=http://localhost:8000
 ```
 
 ### Production (frontend/.env.production)
+
 ```properties
 REACT_APP_BACKEND_URL=https://tpicq.onrender.com
 ```
@@ -44,6 +48,7 @@ REACT_APP_BACKEND_URL=https://tpicq.onrender.com
 ## Usage
 
 ### Development
+
 1. Use the default `.env` files for local development
 2. Run `npm start` for frontend (automatically uses `.env`)
 3. Run `uvicorn main:app --reload` for backend (automatically uses `.env`)
@@ -51,7 +56,9 @@ REACT_APP_BACKEND_URL=https://tpicq.onrender.com
 ### Production
 
 #### Backend (Render)
+
 Set these environment variables in your Render dashboard:
+
 ```
 FRONTEND_URL=https://topicq.netlify.app
 BACKEND_URL=https://tpicq.onrender.com
@@ -63,7 +70,9 @@ DATABASE_URL=sqlite:///:memory:
 ```
 
 #### Frontend (Netlify)
+
 Set these environment variables in your Netlify dashboard:
+
 ```
 REACT_APP_BACKEND_URL=https://tpicq.onrender.com
 ```

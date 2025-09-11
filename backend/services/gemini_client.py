@@ -3,6 +3,7 @@ import requests
 from typing import Dict, Any, List, Optional
 import json
 import random
+import time
 
 def get_available_api_keys() -> List[str]:
     """
@@ -82,32 +83,6 @@ def randomize_quiz_answers(quiz_data: Dict[str, Any]) -> Dict[str, Any]:
     
     return quiz_data
 
-def mock_quiz(topic: str, difficulty: str) -> Dict[str, Any]:
-    """Generate a mock quiz for fallback scenarios - NOT USED in production"""
-    question_count = 10  # Always generate 10 questions
-    
-    questions = []
-    for i in range(question_count):
-        questions.append({
-            "q": f"Sample {difficulty} question {i+1} about {topic}",
-            "options": [
-                f"Correct answer for Q{i+1}",  # Always put correct answer first
-                f"Wrong option B{i+1}", 
-                f"Wrong option C{i+1}",
-                f"Wrong option D{i+1}"
-            ],
-            "answer_index": 0  # Always 0 initially, will be randomized
-        })
-    
-    quiz_data = {
-        "title": f"Quiz: {topic}",
-        "difficulty": difficulty,
-        "questions": questions
-    }
-    
-    # Apply randomization to ensure unpredictable answer positions
-    return randomize_quiz_answers(quiz_data)
-
 def generate_quiz(topic: str, difficulty: str) -> Dict[str, Any]:
     """
     Generate a quiz using the Gemini API with rotating API keys for quota management.
@@ -127,7 +102,7 @@ def generate_quiz(topic: str, difficulty: str) -> Dict[str, Any]:
     
     if not api_keys:
         print(f"❌ Error: No valid GEMINI_API_KEY found")
-        raise Exception("No Gemini API keys configured")
+        raise Exception("No Gemini API keys configured. Please add valid API keys to environment variables.")
     
     print(f"🔑 Found {len(api_keys)} API key(s) available")
     
@@ -146,21 +121,49 @@ def generate_quiz(topic: str, difficulty: str) -> Dict[str, Any]:
             print(f"❌ API key {i+1} failed: {str(e)}")
             last_error = e
             
-            # If this was a quota error, try the next key immediately
-            if "429" in str(e) or "quota" in str(e).lower():
+            # Check error type
+            error_str = str(e).lower()
+            
+            # For quota errors (429), try next key immediately
+            if "429" in str(e) or "quota" in error_str:
                 print(f"🔄 Key {i+1} quota exceeded, trying next key...")
+                continue
+            
+            # For API disabled errors (403), try next key immediately
+            if "403" in str(e) or "permission" in error_str or "disabled" in error_str:
+                print(f"🔄 Key {i+1} API disabled, trying next key...")
+                continue
+            
+            # For overloaded errors (503), wait a bit before trying next key
+            if "503" in str(e) or "overloaded" in error_str or "unavailable" in error_str:
+                print(f"⏳ API overloaded, waiting 2 seconds before next key...")
+                time.sleep(2)
                 continue
             
             # For other errors, also try the next key
             continue
     
-    # If all keys failed, raise the last error
+    # If all keys failed, raise the last error instead of using fallback
     print(f"❌ All {len(api_keys)} API keys failed")
-    raise Exception(f"All API keys failed. Last error: {last_error}")
+    
+    # Create a more descriptive error message based on the last error
+    if last_error:
+        error_str = str(last_error).lower()
+        if "503" in str(last_error) or "overloaded" in error_str:
+            raise Exception("All Gemini API services are currently overloaded. Please try again in a few minutes.")
+        elif "403" in str(last_error) or "permission" in error_str or "disabled" in error_str:
+            raise Exception("Gemini API access is restricted. Please check your API key permissions.")
+        elif "429" in str(last_error) or "quota" in error_str:
+            raise Exception("All API keys have exceeded their quota limits. Please try again tomorrow or add more API keys.")
+        else:
+            raise Exception(f"All API keys failed: {last_error}")
+    else:
+        raise Exception("All API keys failed with unknown errors.")
 
-def call_gemini_api(api_key: str, topic: str, difficulty: str) -> Dict[str, Any]:
+def call_gemini_api(api_key: str, topic: str, difficulty: str, max_retries: int = 3) -> Dict[str, Any]:
     """
     Make the actual API call to Gemini with a specific API key.
+    Includes retry logic for transient failures.
     """
     # Try the updated Gemini API endpoint
     api_url = os.getenv("GEMINI_API_URL", "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent")
@@ -228,86 +231,109 @@ def call_gemini_api(api_key: str, topic: str, difficulty: str) -> Dict[str, Any]
     # Add API key as URL parameter (alternative method)
     api_url_with_key = f"{api_url}?key={api_key}"
     
-    try:
-        # Make the API call
-        print(f"📡 Making API call to: {api_url}")
-        response = requests.post(api_url_with_key, json=payload, headers=headers, timeout=60)
-        
-        print(f"📊 API Response Status: {response.status_code}")
-        print(f"📄 API Response Headers: {dict(response.headers)}")
-        
-        if response.status_code == 200:
-            result = response.json()
-            print("✅ Gemini API call successful!")
-            print(f"🔍 Full API response: {result}")
+    for attempt in range(max_retries):
+        try:
+            # Calculate timeout based on attempt
+            timeout = 30 + (attempt * 15)  # 30s, 45s, 60s
             
-            # Extract text from Gemini response
-            if "candidates" in result and len(result["candidates"]) > 0:
-                candidate = result["candidates"][0]
-                if "content" in candidate and "parts" in candidate["content"]:
-                    text_content = candidate["content"]["parts"][0]["text"]
-                    print(f"📝 Raw Gemini response: {text_content}")
-                    
-                    # Clean the response - remove markdown code blocks if present
-                    cleaned_text = text_content.strip()
-                    if cleaned_text.startswith("```json"):
-                        cleaned_text = cleaned_text[7:]  # Remove ```json
-                    if cleaned_text.startswith("```"):
-                        cleaned_text = cleaned_text[3:]  # Remove ```
-                    if cleaned_text.endswith("```"):
-                        cleaned_text = cleaned_text[:-3]  # Remove trailing ```
-                    cleaned_text = cleaned_text.strip()
-                    
-                    print(f"🧹 Cleaned response: {cleaned_text}")
-                    
-                    # Try to parse the JSON response
-                    try:
-                        quiz_data = json.loads(cleaned_text)
+            print(f"📡 Making API call to: {api_url} (attempt {attempt + 1}/{max_retries})")
+            response = requests.post(api_url_with_key, json=payload, headers=headers, timeout=timeout)
+            
+            print(f"📊 API Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                print("✅ Gemini API call successful!")
+                
+                # Extract text from Gemini response
+                if "candidates" in result and len(result["candidates"]) > 0:
+                    candidate = result["candidates"][0]
+                    if "content" in candidate and "parts" in candidate["content"]:
+                        text_content = candidate["content"]["parts"][0]["text"]
+                        print(f"📝 Raw Gemini response received")
                         
-                        # Validate the structure
-                        if "questions" in quiz_data and isinstance(quiz_data["questions"], list):
-                            print(f"🎯 Successfully generated {len(quiz_data['questions'])} questions!")
-                            print(f"🔍 First question before randomization: {quiz_data['questions'][0]}")
+                        # Clean the response - remove markdown code blocks if present
+                        cleaned_text = text_content.strip()
+                        if cleaned_text.startswith("```json"):
+                            cleaned_text = cleaned_text[7:]  # Remove ```json
+                        if cleaned_text.startswith("```"):
+                            cleaned_text = cleaned_text[3:]  # Remove ```
+                        if cleaned_text.endswith("```"):
+                            cleaned_text = cleaned_text[:-3]  # Remove trailing ```
+                        cleaned_text = cleaned_text.strip()
+                        
+                        # Try to parse the JSON response
+                        try:
+                            quiz_data = json.loads(cleaned_text)
                             
-                            # Randomize the answer positions to prevent predictability
-                            quiz_data = randomize_quiz_answers(quiz_data)
-                            
-                            print(f"🔀 Answer positions randomized!")
-                            print(f"🔍 First question after randomization: {quiz_data['questions'][0]}")
-                            
-                            # Verify answer distribution
-                            answer_distribution = {}
-                            for q in quiz_data['questions']:
-                                idx = q['answer_index']
-                                answer_distribution[idx] = answer_distribution.get(idx, 0) + 1
-                            print(f"📊 Answer distribution: {answer_distribution}")
-                            
-                            return quiz_data
-                        else:
-                            print(f"⚠️ Warning: Invalid quiz structure from Gemini API")
-                            print(f"🔍 Received structure: {quiz_data}")
-                            raise Exception("Invalid quiz structure from Gemini API")
-                    except json.JSONDecodeError as e:
-                        print(f"⚠️ Warning: Could not parse JSON from Gemini API")
-                        print(f"🔍 JSON Error: {e}")
-                        print(f"🔍 Raw text that failed to parse: {cleaned_text}")
-                        raise Exception(f"Failed to parse JSON from Gemini API: {e}")
+                            # Validate the structure
+                            if "questions" in quiz_data and isinstance(quiz_data["questions"], list):
+                                print(f"🎯 Successfully generated {len(quiz_data['questions'])} questions!")
+                                
+                                # Randomize the answer positions to prevent predictability
+                                quiz_data = randomize_quiz_answers(quiz_data)
+                                
+                                print(f"🔀 Answer positions randomized!")
+                                
+                                # Verify answer distribution
+                                answer_distribution = {}
+                                for q in quiz_data['questions']:
+                                    idx = q['answer_index']
+                                    answer_distribution[idx] = answer_distribution.get(idx, 0) + 1
+                                print(f"📊 Answer distribution: {answer_distribution}")
+                                
+                                return quiz_data
+                            else:
+                                raise Exception("Invalid quiz structure from Gemini API")
+                        except json.JSONDecodeError as e:
+                            raise Exception(f"Failed to parse JSON from Gemini API: {e}")
+                    else:
+                        raise Exception("Unexpected Gemini response structure")
                 else:
-                    print(f"⚠️ Warning: Unexpected Gemini response structure")
-                    print(f"🔍 Candidate structure: {candidate}")
-                    raise Exception("Unexpected Gemini response structure")
+                    raise Exception("No candidates in Gemini response")
+            
+            elif response.status_code == 503:
+                # Service unavailable - retry with exponential backoff
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt  # 1s, 2s, 4s
+                    print(f"⏳ API overloaded (503), retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    print(f"❌ API still overloaded after {max_retries} attempts")
+                    raise Exception(f"Gemini API overloaded after {max_retries} retries")
+            
+            elif response.status_code == 429:
+                # Rate limit - don't retry this key
+                print(f"❌ Rate limit exceeded (429) for this API key")
+                raise Exception("Gemini API rate limit exceeded")
+            
+            elif response.status_code == 403:
+                # Forbidden - API disabled
+                print(f"❌ API access forbidden (403) - API may be disabled")
+                raise Exception("Gemini API access forbidden - check API key and permissions")
+            
             else:
-                print(f"⚠️ Warning: No candidates in Gemini response")
-                print(f"🔍 Response structure: {result}")
-                raise Exception("No candidates in Gemini response")
-        else:
-            print(f"❌ Gemini API call failed (status {response.status_code})")
-            print(f"🔍 Response text: {response.text}")
-            raise Exception(f"Gemini API call failed with status {response.status_code}")
+                print(f"❌ Gemini API call failed (status {response.status_code})")
+                print(f"🔍 Response text: {response.text}")
+                
+                # For other errors, retry once more
+                if attempt < max_retries - 1:
+                    print(f"🔄 Retrying API call in 3 seconds...")
+                    time.sleep(3)
+                    continue
+                else:
+                    raise Exception(f"Gemini API call failed with status {response.status_code}")
         
-    except requests.RequestException as e:
-        print(f"⚠️ Network error calling Gemini API: {e}")
-        raise Exception(f"Network error calling Gemini API: {e}")
-    except Exception as e:
-        print(f"⚠️ Error with Gemini API: {e}")
-        raise
+        except requests.RequestException as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt
+                print(f"⚠️ Network error: {e}, retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+                continue
+            else:
+                print(f"⚠️ Network error calling Gemini API: {e}")
+                raise Exception(f"Network error calling Gemini API: {e}")
+        except Exception as e:
+            print(f"⚠️ Error with Gemini API: {e}")
+            raise
