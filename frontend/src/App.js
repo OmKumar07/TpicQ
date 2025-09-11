@@ -119,14 +119,55 @@ function App() {
           }
         }
 
-        // Get the topic ID
-        const topicsResponse = await axios.get(`${API_BASE}/topics`);
+        // Wait a small moment for database to be consistent
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Get the topic ID with retry logic
+        let topicsResponse;
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (attempts < maxAttempts) {
+          try {
+            topicsResponse = await axios.get(`${API_BASE}/topics`);
+            break;
+          } catch (error) {
+            attempts++;
+            if (attempts >= maxAttempts) throw error;
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+        }
+        
+        console.log(`Available topics:`, topicsResponse.data);
+        
         const topicData = topicsResponse.data.find(
           (t) => t.name.toLowerCase() === topic.toLowerCase()
         );
 
+        console.log(`Looking for topic: "${topic}", found:`, topicData);
+
         if (!topicData) {
-          throw new Error(`Topic "${topic}" not found after creation`);
+          // Try to find topic with partial match as fallback
+          const partialMatch = topicsResponse.data.find(
+            (t) => t.name.toLowerCase().includes(topic.toLowerCase()) || 
+                   topic.toLowerCase().includes(t.name.toLowerCase())
+          );
+          
+          if (partialMatch) {
+            console.log(`Using partial match for topic:`, partialMatch);
+            // Use the partial match
+            const quizResponse = await axios.post(
+              `${API_BASE}/topics/${partialMatch.id}/generate-quiz`,
+              { difficulty }
+            );
+
+            return {
+              topic: partialMatch.name, // Use the actual topic name from database
+              questions: quizResponse.data.content.questions,
+            };
+          }
+          
+          throw new Error(`Topic "${topic}" not found after creation. Available topics: ${topicsResponse.data.map(t => t.name).join(', ')}`);
         }
 
         // Generate quiz for this topic

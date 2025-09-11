@@ -16,8 +16,8 @@ def get_topic(db: Session, topic_id: int):
     return db.query(models.Topic).filter(models.Topic.id == topic_id).first()
 
 def get_topic_by_name(db: Session, name: str):
-    """Get a topic by name"""
-    return db.query(models.Topic).filter(models.Topic.name == name).first()
+    """Get a topic by name (case-insensitive)"""
+    return db.query(models.Topic).filter(models.Topic.name.ilike(name)).first()
 
 def get_topics(db: Session, skip: int = 0, limit: int = 100):
     """Get all topics"""
