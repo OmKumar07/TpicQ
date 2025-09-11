@@ -3,9 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
-from .db import engine, get_db
-from . import models, crud, schemas
-from .services.gemini_client import generate_quiz
+import sys
+import os
+
+# Add current directory to Python path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from db import engine, get_db
+import models, crud, schemas
+from services.gemini_client import generate_quiz
 
 # Load environment variables from .env file
 load_dotenv()
