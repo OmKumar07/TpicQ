@@ -144,9 +144,15 @@ def debug_database():
         try:
             topic_count = db.query(models.Topic).count()
             quiz_count = db.query(models.Quiz).count()
+            
+            # Get all topics
+            all_topics = db.query(models.Topic).all()
+            topic_list = [{"id": t.id, "name": t.name, "created_at": str(t.created_at)} for t in all_topics]
+            
         except Exception as e:
             topic_count = f"Error: {e}"
             quiz_count = f"Error: {e}"
+            topic_list = []
         finally:
             db.close()
         
@@ -156,6 +162,7 @@ def debug_database():
             "tables": tables,
             "topic_count": topic_count,
             "quiz_count": quiz_count,
+            "all_topics": topic_list,
             "engine_info": str(engine.url)
         }
     except Exception as e:
@@ -198,24 +205,46 @@ async def preflight_handler(request: Request, rest_of_path: str):
 def create_topic(topic: schemas.TopicCreate, db: Session = Depends(get_db)):
     """Create a new topic"""
     try:
-        print(f"📝 Creating topic: {topic.name}")
+        print(f"📝 Creating topic: '{topic.name}' (length: {len(topic.name)})")
         
-        # Check if topic already exists
-        db_topic = crud.get_topic_by_name(db, name=topic.name)
-        if db_topic:
-            print(f"⚠️  Topic '{topic.name}' already exists")
-            raise HTTPException(status_code=400, detail="Topic already exists")
+        # Validate topic name
+        if not topic.name or not topic.name.strip():
+            raise HTTPException(status_code=400, detail="Topic name cannot be empty")
+        
+        topic_name = topic.name.strip()
+        print(f"🔍 Sanitized topic name: '{topic_name}'")
+        
+        # Check if topic already exists (with better error handling)
+        try:
+            db_topic = crud.get_topic_by_name(db, name=topic_name)
+            if db_topic:
+                print(f"⚠️  Topic '{topic_name}' already exists with ID: {db_topic.id}")
+                raise HTTPException(status_code=400, detail="Topic already exists")
+        except HTTPException:
+            raise
+        except Exception as search_error:
+            print(f"⚠️  Error searching for existing topic: {search_error}")
+            # Continue with creation attempt
         
         # Create new topic
-        new_topic = crud.create_topic(db=db, name=topic.name)
-        print(f"✅ Topic '{topic.name}' created successfully with ID: {new_topic.id}")
-        return new_topic
+        try:
+            new_topic = crud.create_topic(db=db, name=topic_name)
+            print(f"✅ Topic '{topic_name}' created successfully with ID: {new_topic.id}")
+            return new_topic
+        except Exception as create_error:
+            print(f"❌ Error creating topic in database: {create_error}")
+            print(f"🔍 Error type: {type(create_error)}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Database error creating topic: {str(create_error)}"
+            )
         
     except HTTPException:
         # Re-raise HTTP exceptions (like topic already exists)
         raise
     except Exception as e:
-        print(f"❌ Failed to create topic '{topic.name}': {e}")
+        print(f"❌ Unexpected error creating topic '{topic.name}': {e}")
+        print(f"🔍 Error type: {type(e)}")
         
         # Check if it's a database table issue
         if "no such table" in str(e):

@@ -4,12 +4,28 @@ import json
 
 # Topic CRUD operations
 def create_topic(db: Session, name: str):
-    """Create a new topic"""
-    db_topic = models.Topic(name=name)
-    db.add(db_topic)
-    db.commit()
-    db.refresh(db_topic)
-    return db_topic
+    """Create a new topic with better error handling"""
+    try:
+        db_topic = models.Topic(name=name)
+        db.add(db_topic)
+        db.commit()
+        db.refresh(db_topic)
+        return db_topic
+    except Exception as e:
+        db.rollback()  # Rollback the transaction on error
+        print(f"❌ Database error creating topic '{name}': {e}")
+        print(f"🔍 Error type: {type(e)}")
+        
+        # Check if it's a constraint violation (unique name)
+        if "UNIQUE constraint failed" in str(e) or "unique" in str(e).lower():
+            # Topic already exists, try to retrieve it
+            existing_topic = db.query(models.Topic).filter(models.Topic.name == name).first()
+            if existing_topic:
+                print(f"🔄 Topic '{name}' already exists, returning existing one with ID: {existing_topic.id}")
+                return existing_topic
+        
+        # Re-raise the original error if we can't handle it
+        raise e
 
 def get_topic(db: Session, topic_id: int):
     """Get a topic by ID"""
