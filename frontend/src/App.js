@@ -120,13 +120,13 @@ function App() {
         }
 
         // Wait a small moment for database to be consistent
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Get the topic ID with retry logic
         let topicsResponse;
         let attempts = 0;
         const maxAttempts = 3;
-        
+
         while (attempts < maxAttempts) {
           try {
             topicsResponse = await axios.get(`${API_BASE}/topics`);
@@ -134,12 +134,12 @@ function App() {
           } catch (error) {
             attempts++;
             if (attempts >= maxAttempts) throw error;
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
           }
         }
-        
+
         console.log(`Available topics:`, topicsResponse.data);
-        
+
         const topicData = topicsResponse.data.find(
           (t) => t.name.toLowerCase() === topic.toLowerCase()
         );
@@ -149,10 +149,11 @@ function App() {
         if (!topicData) {
           // Try to find topic with partial match as fallback
           const partialMatch = topicsResponse.data.find(
-            (t) => t.name.toLowerCase().includes(topic.toLowerCase()) || 
-                   topic.toLowerCase().includes(t.name.toLowerCase())
+            (t) =>
+              t.name.toLowerCase().includes(topic.toLowerCase()) ||
+              topic.toLowerCase().includes(t.name.toLowerCase())
           );
-          
+
           if (partialMatch) {
             console.log(`Using partial match for topic:`, partialMatch);
             // Use the partial match
@@ -166,8 +167,12 @@ function App() {
               questions: quizResponse.data.content.questions,
             };
           }
-          
-          throw new Error(`Topic "${topic}" not found after creation. Available topics: ${topicsResponse.data.map(t => t.name).join(', ')}`);
+
+          throw new Error(
+            `Topic "${topic}" not found after creation. Available topics: ${topicsResponse.data
+              .map((t) => t.name)
+              .join(", ")}`
+          );
         }
 
         // Generate quiz for this topic
