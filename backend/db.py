@@ -4,7 +4,16 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Get database URL from environment or use SQLite default
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/dev.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    # Check if we're in a deployment environment (Render)
+    if os.getenv("RENDER"):
+        # Use in-memory SQLite for Render deployment
+        DATABASE_URL = "sqlite:///:memory:"
+    else:
+        # Use file-based SQLite for local development
+        DATABASE_URL = "sqlite:///./data/dev.db"
 
 # Create engine
 if DATABASE_URL.startswith("sqlite"):
