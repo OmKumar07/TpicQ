@@ -9,17 +9,26 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     # Check if we're in a deployment environment (Render)
     if os.getenv("RENDER"):
-        # Use in-memory SQLite for Render deployment
-        DATABASE_URL = "sqlite:///:memory:"
+        # Use shared in-memory SQLite for Render deployment
+        # Using file: scheme with cache=shared to ensure single shared database
+        DATABASE_URL = "sqlite:///file:memdb1?mode=memory&cache=shared&uri=true"
     else:
         # Use file-based SQLite for local development
         DATABASE_URL = "sqlite:///./data/dev.db"
 
 # Create engine
 if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    engine = create_engine(
+        DATABASE_URL, 
+        connect_args={"check_same_thread": False},
+        echo=False,  # Set to True for SQL debugging
+        pool_pre_ping=True
+    )
 else:
     engine = create_engine(DATABASE_URL)
+
+print(f"🗃️  Database URL: {DATABASE_URL}")
+print(f"🏭 Engine: {engine}")
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

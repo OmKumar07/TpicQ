@@ -236,8 +236,13 @@ def create_topic(topic: schemas.TopicCreate, db: Session = Depends(get_db)):
 @app.get("/topics", response_model=list[schemas.Topic])
 def get_topics(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all topics"""
-    topics = crud.get_topics(db, skip=skip, limit=limit)
-    return topics
+    try:
+        topics = crud.get_topics(db, skip=skip, limit=limit)
+        print(f"📋 Retrieved {len(topics)} topics: {[t.name for t in topics]}")
+        return topics
+    except Exception as e:
+        print(f"❌ Failed to get topics: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve topics: {str(e)}")
 
 @app.post("/topics/{topic_id}/generate-quiz")
 def generate_quiz_endpoint(topic_id: int, quiz_request: schemas.QuizGenerate, db: Session = Depends(get_db)):
