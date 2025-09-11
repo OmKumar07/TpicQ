@@ -278,3 +278,20 @@ data/
 
 # Alembic
 alembic/versions/
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Azure/Docker deployment files
+*.yaml
+*.yml
+Dockerfile*
+docker-compose*
+build.sh
+startup.sh
+deploy.sh
+
+# Configuration documentation
+ENV_CONFIG.md
