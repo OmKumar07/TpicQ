@@ -58,36 +58,59 @@ async def startup_event():
     """Startup event to ensure database is ready"""
     print("🚀 Starting TpicQ API...")
     print(f"🌍 Environment: {'Production' if os.getenv('RENDER') else 'Development'}")
-    print(f"🔗 Frontend URL: {os.getenv('FRONTEND_URL', 'http://localhost:3000')}")
-    print(f"🔗 Backend URL: {os.getenv('BACKEND_URL', 'http://localhost:8000')}")
+    print(f"🔗 Frontend URL: {os.getenv('FRONTEND_URL', 'Not set')}")
+    print(f"🔗 Backend URL: {os.getenv('BACKEND_URL', 'Not set')}")
+    print(f"🔒 CORS: Will allow https://topicq.netlify.app and localhost:3000")
     
     # Re-initialize database on startup (important for in-memory databases)
     init_database()
 
-# Manual CORS middleware
+# Manual CORS middleware - Always allow production URLs
 @app.middleware("http")
 async def cors_handler(request: Request, call_next):
     response = await call_next(request)
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    response.headers["Access-Control-Allow-Origin"] = frontend_url
+    
+    # Get the origin from the request
+    origin = request.headers.get("origin")
+    
+    # Define allowed origins (including all possible combinations)
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000", 
+        "https://topicq.netlify.app",
+        "https://tpicq.onrender.com",
+        os.getenv("FRONTEND_URL", ""),
+        os.getenv("BACKEND_URL", "")
+    ]
+    
+    # Filter out empty strings
+    allowed_origins = [url for url in allowed_origins if url]
+    
+    # Check if the origin is allowed
+    if origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+    else:
+        # Default to Netlify production URL for production environment
+        if os.getenv("RENDER"):
+            response.headers["Access-Control-Allow-Origin"] = "https://topicq.netlify.app"
+        else:
+            response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+    
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "false"
     response.headers["Access-Control-Max-Age"] = "3600"
     return response
 
-# Add CORS middleware for frontend
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
-
+# Add CORS middleware for frontend - Explicit production URLs
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        frontend_url,
-        backend_url,
-        "https://topicq.netlify.app",
-        "https://tpicq.onrender.com",
+        "https://topicq.netlify.app",  # Production frontend
+        "https://tpicq.onrender.com",  # Production backend  
+        "*"  # Temporary wildcard for debugging
     ],
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -141,13 +164,33 @@ def debug_database():
 @app.options("/{rest_of_path:path}")
 async def preflight_handler(request: Request, rest_of_path: str):
     """Handle CORS preflight requests"""
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    
+    # Get the origin from the request
+    origin = request.headers.get("origin")
+    
+    # Define allowed origins
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000", 
+        "https://topicq.netlify.app",
+        "https://tpicq.onrender.com"
+    ]
+    
+    # Default to production frontend for production environment
+    allowed_origin = "https://topicq.netlify.app" if os.getenv("RENDER") else "http://localhost:3000"
+    
+    # Use specific origin if it's in allowed list
+    if origin in allowed_origins:
+        allowed_origin = origin
+    
     return Response(
         status_code=200,
         headers={
-            "Access-Control-Allow-Origin": frontend_url,
+            "Access-Control-Allow-Origin": allowed_origin,
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "false",
+            "Access-Control-Max-Age": "3600"
         }
     )
 
