@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
@@ -24,9 +24,14 @@ app = FastAPI(title="TpicQ API", version="1.0.0")
 # Add CORS middleware for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify allowed origins
+    allow_origins=[
+        "http://localhost:3000",  # Local development
+        "http://127.0.0.1:3000",  # Local development
+        "https://topicq.netlify.app",  # Production frontend
+        "https://tpicq.onrender.com",  # Backend itself
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -39,6 +44,11 @@ except Exception:
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(request: Request, rest_of_path: str):
+    """Handle CORS preflight requests"""
+    return {"message": "OK"}
 
 @app.post("/topics", response_model=schemas.Topic)
 def create_topic(topic: schemas.TopicCreate, db: Session = Depends(get_db)):
