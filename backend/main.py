@@ -16,10 +16,53 @@ from services.gemini_client import generate_quiz
 # Load environment variables from .env file
 load_dotenv()
 
-# Create database tables
-models.Base.metadata.create_all(bind=engine)
+# Initialize database
+def init_database():
+    """Initialize database tables and ensure they exist"""
+    try:
+        print("🔧 Initializing database...")
+        
+        # Create all tables
+        models.Base.metadata.create_all(bind=engine)
+        
+        # Verify tables were created by trying to connect and check
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        
+        print(f"📊 Database tables created: {tables}")
+        
+        if "topics" not in tables or "quizzes" not in tables:
+            print("⚠️  Warning: Required tables not found, attempting to recreate...")
+            models.Base.metadata.drop_all(bind=engine)
+            models.Base.metadata.create_all(bind=engine)
+            
+            # Check again
+            inspector = inspect(engine)
+            tables = inspector.get_table_names()
+            print(f"📊 Tables after recreation: {tables}")
+        
+        print("✅ Database initialization completed!")
+        
+    except Exception as e:
+        print(f"❌ Database initialization failed: {e}")
+        raise e
+
+# Initialize database
+init_database()
 
 app = FastAPI(title="TpicQ API", version="1.0.0")
+
+@app.on_event("startup")
+async def startup_event():
+    """Startup event to ensure database is ready"""
+    print("🚀 Starting TpicQ API...")
+    print(f"🌍 Environment: {'Production' if os.getenv('RENDER') else 'Development'}")
+    print(f"🔗 Frontend URL: {os.getenv('FRONTEND_URL', 'http://localhost:3000')}")
+    print(f"🔗 Backend URL: {os.getenv('BACKEND_URL', 'http://localhost:8000')}")
+    
+    # Re-initialize database on startup (important for in-memory databases)
+    init_database()
 
 # Manual CORS middleware
 @app.middleware("http")
@@ -65,6 +108,36 @@ def root():
 def health():
     return {"status": "ok"}
 
+@app.get("/debug/database")
+def debug_database():
+    """Debug endpoint to check database status"""
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        
+        # Try to count topics
+        db = next(get_db())
+        try:
+            topic_count = db.query(models.Topic).count()
+            quiz_count = db.query(models.Quiz).count()
+        except Exception as e:
+            topic_count = f"Error: {e}"
+            quiz_count = f"Error: {e}"
+        finally:
+            db.close()
+        
+        return {
+            "database_url": os.getenv("DATABASE_URL", "Not set"),
+            "environment": "Production" if os.getenv("RENDER") else "Development",
+            "tables": tables,
+            "topic_count": topic_count,
+            "quiz_count": quiz_count,
+            "engine_info": str(engine.url)
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.options("/{rest_of_path:path}")
 async def preflight_handler(request: Request, rest_of_path: str):
     """Handle CORS preflight requests"""
@@ -81,11 +154,41 @@ async def preflight_handler(request: Request, rest_of_path: str):
 @app.post("/topics", response_model=schemas.Topic)
 def create_topic(topic: schemas.TopicCreate, db: Session = Depends(get_db)):
     """Create a new topic"""
-    # Check if topic already exists
-    db_topic = crud.get_topic_by_name(db, name=topic.name)
-    if db_topic:
-        raise HTTPException(status_code=400, detail="Topic already exists")
-    return crud.create_topic(db=db, name=topic.name)
+    try:
+        print(f"📝 Creating topic: {topic.name}")
+        
+        # Check if topic already exists
+        db_topic = crud.get_topic_by_name(db, name=topic.name)
+        if db_topic:
+            print(f"⚠️  Topic '{topic.name}' already exists")
+            raise HTTPException(status_code=400, detail="Topic already exists")
+        
+        # Create new topic
+        new_topic = crud.create_topic(db=db, name=topic.name)
+        print(f"✅ Topic '{topic.name}' created successfully with ID: {new_topic.id}")
+        return new_topic
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions (like topic already exists)
+        raise
+    except Exception as e:
+        print(f"❌ Failed to create topic '{topic.name}': {e}")
+        
+        # Check if it's a database table issue
+        if "no such table" in str(e):
+            print("🔧 Database table issue detected, attempting to reinitialize...")
+            try:
+                init_database()
+                # Retry the operation
+                db_topic = crud.get_topic_by_name(db, name=topic.name)
+                if db_topic:
+                    raise HTTPException(status_code=400, detail="Topic already exists")
+                return crud.create_topic(db=db, name=topic.name)
+            except Exception as retry_error:
+                print(f"❌ Retry failed: {retry_error}")
+                raise HTTPException(status_code=500, detail=f"Database initialization failed: {str(retry_error)}")
+        
+        raise HTTPException(status_code=500, detail=f"Failed to create topic: {str(e)}")
 
 @app.get("/topics", response_model=list[schemas.Topic])
 def get_topics(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
