@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
@@ -21,16 +21,27 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="TpicQ API", version="1.0.0")
 
+# Manual CORS middleware
+@app.middleware("http")
+async def cors_handler(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Max-Age"] = "3600"
+    return response
+
 # Add CORS middleware for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # Local development
-        "http://127.0.0.1:3000",  # Local development
-        "https://topicq.netlify.app",  # Production frontend
-        "https://tpicq.onrender.com",  # Backend itself
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://topicq.netlify.app",
+        "https://tpicq.onrender.com",
+        "*"  # Temporary fallback for debugging
     ],
-    allow_credentials=True,
+    allow_credentials=False,  # Changed to False to avoid credential issues
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -41,6 +52,10 @@ try:
 except Exception:
     pass  # React build not available yet
 
+@app.get("/")
+def root():
+    return {"message": "TpicQ API is running", "status": "ok"}
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -48,7 +63,14 @@ def health():
 @app.options("/{rest_of_path:path}")
 async def preflight_handler(request: Request, rest_of_path: str):
     """Handle CORS preflight requests"""
-    return {"message": "OK"}
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 @app.post("/topics", response_model=schemas.Topic)
 def create_topic(topic: schemas.TopicCreate, db: Session = Depends(get_db)):
