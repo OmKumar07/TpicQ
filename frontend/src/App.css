@@ -6,6 +6,12 @@
   --bs-primary-rgb: 37, 99, 235;
 }
 
+/* Hero page gradient background */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
 /* Custom close button for selected topics */
 .btn-close-white {
   filter: invert(1) grayscale(100%) brightness(200%);
@@ -37,6 +43,18 @@
   border-radius: 6px;
 }
 
+/* Hero page card hover effects */
+.card:hover {
+  transform: translateY(-5px);
+  transition: all 0.3s ease;
+}
+
+/* Custom button styles */
+.btn-lg {
+  font-weight: 600;
+  border-radius: 8px;
+}
+
 /* Responsive text sizing */
 @media (max-width: 768px) {
   .display-4 {
@@ -49,5 +67,9 @@
 
   .display-6 {
     font-size: 2rem;
+  }
+
+  .display-2 {
+    font-size: 3rem;
   }
 }

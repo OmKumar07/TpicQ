@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from db import engine, get_db
 import models, crud, schemas
 from services.gemini_client import generate_quiz
+from routes.resume import router as resume_router
 
 # Load environment variables from .env file
 load_dotenv()
@@ -122,6 +123,9 @@ try:
     app.mount("/react", StaticFiles(directory="frontend-react/build", html=True), name="react")
 except Exception:
     pass  # React build not available yet
+
+# Include resume routes
+app.include_router(resume_router, prefix="/api/resume", tags=["resume"])
 
 @app.get("/")
 def root():

@@ -20,18 +20,21 @@ A modern web application for generating practice quizzes using AI. Create custom
 ## 🛠️ Tech Stack
 
 ### Backend
+
 - **FastAPI** - Modern Python web framework
 - **SQLite** - Lightweight database with SQLAlchemy ORM
 - **Google Gemini API** - AI question generation
 - **Deployed on Render** - Auto-scaling backend hosting
 
-### Frontend  
+### Frontend
+
 - **React 18** - Modern JavaScript framework
 - **Bootstrap 5** - Responsive UI components
 - **Axios** - HTTP client for API communication
 - **Deployed on Netlify** - Fast frontend hosting
 
 ### Features
+
 - **API Key Rotation** - Multiple Gemini keys for high availability
 - **CORS Handling** - Secure cross-origin requests
 - **Error Handling** - Graceful fallbacks and user feedback
@@ -40,9 +43,11 @@ A modern web application for generating practice quizzes using AI. Create custom
 ## 🚀 Quick Start
 
 ### Using the Live App
+
 Simply visit [https://topicq.netlify.app](https://topicq.netlify.app) to start creating quizzes immediately!
 
 ### How to Use
+
 1. **Add Topics** - Type topic names (e.g., "Python", "Machine Learning")
 2. **Select Difficulty** - Choose Easy, Medium, or Hard
 3. **Generate Quiz** - Click to create AI-powered questions
