@@ -20,18 +20,22 @@ function ResumeQuiz({ onBack }) {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       // Validate file type
-      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+      const allowedTypes = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/msword",
+      ];
       if (!allowedTypes.includes(selectedFile.type)) {
         setError("Please upload a PDF or Word document (.pdf, .docx, .doc)");
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (selectedFile.size > 5 * 1024 * 1024) {
         setError("File size must be less than 5MB");
         return;
       }
-      
+
       setFile(selectedFile);
       setError("");
     }
@@ -49,16 +53,20 @@ function ResumeQuiz({ onBack }) {
     try {
       // Step 1: Upload resume
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
-      const uploadResponse = await axios.post(`${API_BASE}/api/resume/upload-resume`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      const uploadResponse = await axios.post(
+        `${API_BASE}/api/resume/upload-resume`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
-      });
+      );
 
       if (!uploadResponse.data || !uploadResponse.data.id) {
-        throw new Error('Failed to upload resume');
+        throw new Error("Failed to upload resume");
       }
 
       // Step 2: Generate quiz
@@ -72,24 +80,27 @@ function ResumeQuiz({ onBack }) {
         setSelectedAnswers({});
         setShowAnswers(false);
       } else {
-        throw new Error('Failed to generate quiz from resume');
+        throw new Error("Failed to generate quiz from resume");
       }
-
     } catch (err) {
       console.error("Resume quiz generation error:", err);
-      
-      let errorMessage = "Failed to generate quiz from resume. Please try again.";
-      
+
+      let errorMessage =
+        "Failed to generate quiz from resume. Please try again.";
+
       if (err.response?.status === 413) {
-        errorMessage = "File too large. Please upload a smaller resume (max 5MB).";
+        errorMessage =
+          "File too large. Please upload a smaller resume (max 5MB).";
       } else if (err.response?.status === 400) {
-        errorMessage = err.response.data?.detail || "Invalid file format. Please upload a PDF or Word document.";
+        errorMessage =
+          err.response.data?.detail ||
+          "Invalid file format. Please upload a PDF or Word document.";
       } else if (err.response?.status === 500) {
         errorMessage = "Server error. Please try again later.";
       } else if (err.response?.data?.detail) {
         errorMessage = err.response.data.detail;
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -109,20 +120,20 @@ function ResumeQuiz({ onBack }) {
     console.log("Quiz:", quiz);
     console.log("Selected answers:", selectedAnswers);
     console.log("Quiz questions:", quiz?.questions);
-    
+
     // Validate that we have all required data
     if (!quiz || !quiz.questions) {
       console.error("No quiz data available");
       setError("Quiz data is missing. Please try again.");
       return;
     }
-    
+
     if (Object.keys(selectedAnswers).length !== quiz.questions.length) {
       console.error("Not all questions answered");
       setError("Please answer all questions before submitting.");
       return;
     }
-    
+
     console.log("Setting showAnswers to true");
     setShowAnswers(true);
     console.log("ShowAnswers set to true");
@@ -145,17 +156,17 @@ function ResumeQuiz({ onBack }) {
       console.log("No questions in quiz data");
       return { correct: 0, total: 0, percentage: 0 };
     }
-    
+
     const correct = quiz.questions.filter(
       (q, i) => selectedAnswers[i] === q.answer_index
     ).length;
-    
+
     const score = {
       correct,
       total: quiz.questions.length,
-      percentage: Math.round((correct / quiz.questions.length) * 100)
+      percentage: Math.round((correct / quiz.questions.length) * 100),
     };
-    
+
     console.log("Score calculated:", score);
     return score;
   };
@@ -170,7 +181,9 @@ function ResumeQuiz({ onBack }) {
         </button>
         <div>
           <h1 className="h2 fw-bold text-primary mb-1">Resume Quiz</h1>
-          <p className="text-muted mb-0">Upload your resume for a personalized 30-question assessment</p>
+          <p className="text-muted mb-0">
+            Upload your resume for a personalized 30-question assessment
+          </p>
         </div>
       </div>
 
@@ -193,10 +206,14 @@ function ResumeQuiz({ onBack }) {
           <div className="card mb-4">
             <div className="card-body p-5 text-center">
               <div className="mb-4">
-                <i className="bi bi-cloud-upload text-primary mb-3" style={{ fontSize: "4rem" }}></i>
+                <i
+                  className="bi bi-cloud-upload text-primary mb-3"
+                  style={{ fontSize: "4rem" }}
+                ></i>
                 <h5 className="fw-bold mb-2">Upload Your Resume</h5>
                 <p className="text-muted">
-                  We'll analyze your resume and create personalized quiz questions based on your skills and experience
+                  We'll analyze your resume and create personalized quiz
+                  questions based on your skills and experience
                 </p>
               </div>
 
@@ -216,7 +233,7 @@ function ResumeQuiz({ onBack }) {
                   <i className="bi bi-file-earmark-arrow-up me-2"></i>
                   Choose Resume File
                 </label>
-                
+
                 {file && (
                   <div className="mt-3">
                     <div className="d-inline-flex align-items-center bg-light rounded-pill px-3 py-2">
@@ -227,7 +244,10 @@ function ResumeQuiz({ onBack }) {
                         onClick={() => setFile(null)}
                         style={{ width: "24px", height: "24px", padding: "0" }}
                       >
-                        <i className="bi bi-x" style={{ fontSize: "0.8rem" }}></i>
+                        <i
+                          className="bi bi-x"
+                          style={{ fontSize: "0.8rem" }}
+                        ></i>
                       </button>
                     </div>
                   </div>
@@ -247,7 +267,10 @@ function ResumeQuiz({ onBack }) {
               >
                 {loading ? (
                   <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                    ></span>
                     Analyzing Resume...
                   </>
                 ) : (
@@ -264,29 +287,44 @@ function ResumeQuiz({ onBack }) {
           <div className="row g-4">
             <div className="col-md-4">
               <div className="text-center">
-                <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{ width: "60px", height: "60px" }}>
+                <div
+                  className="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                  style={{ width: "60px", height: "60px" }}
+                >
                   <i className="bi bi-person-workspace text-primary fs-4"></i>
                 </div>
                 <h6 className="fw-bold">Skill-Based Questions</h6>
-                <p className="text-muted small">Questions tailored to your specific skills and experience</p>
+                <p className="text-muted small">
+                  Questions tailored to your specific skills and experience
+                </p>
               </div>
             </div>
             <div className="col-md-4">
               <div className="text-center">
-                <div className="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{ width: "60px", height: "60px" }}>
+                <div
+                  className="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                  style={{ width: "60px", height: "60px" }}
+                >
                   <i className="bi bi-speedometer2 text-success fs-4"></i>
                 </div>
                 <h6 className="fw-bold">Interview Prep</h6>
-                <p className="text-muted small">Perfect for preparing for technical interviews</p>
+                <p className="text-muted small">
+                  Perfect for preparing for technical interviews
+                </p>
               </div>
             </div>
             <div className="col-md-4">
               <div className="text-center">
-                <div className="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{ width: "60px", height: "60px" }}>
+                <div
+                  className="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                  style={{ width: "60px", height: "60px" }}
+                >
                   <i className="bi bi-shield-check text-warning fs-4"></i>
                 </div>
                 <h6 className="fw-bold">Secure & Private</h6>
-                <p className="text-muted small">Your resume data is processed securely and not stored</p>
+                <p className="text-muted small">
+                  Your resume data is processed securely and not stored
+                </p>
               </div>
             </div>
           </div>
@@ -311,7 +349,9 @@ function ResumeQuiz({ onBack }) {
           <div className="card-header bg-primary text-white">
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                <h5 className="card-title mb-1 text-white">Resume-Based Quiz</h5>
+                <h5 className="card-title mb-1 text-white">
+                  Resume-Based Quiz
+                </h5>
                 <small className="text-white-50">
                   Based on: {quiz.resume_filename || "Your Resume"}
                 </small>
@@ -320,7 +360,10 @@ function ResumeQuiz({ onBack }) {
                 <span className="badge bg-light text-dark me-2">
                   30 Questions
                 </span>
-                <button className="btn btn-outline-light btn-sm" onClick={resetQuiz}>
+                <button
+                  className="btn btn-outline-light btn-sm"
+                  onClick={resetQuiz}
+                >
                   <i className="bi bi-arrow-clockwise me-1"></i>
                   New Quiz
                 </button>
@@ -334,7 +377,8 @@ function ResumeQuiz({ onBack }) {
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <small className="text-muted fw-bold">Progress</small>
                 <small className="text-muted fw-bold">
-                  {Object.keys(selectedAnswers).length} / {quiz.questions.length}
+                  {Object.keys(selectedAnswers).length} /{" "}
+                  {quiz.questions.length}
                 </small>
               </div>
               <div className="progress" style={{ height: "8px" }}>
@@ -342,7 +386,11 @@ function ResumeQuiz({ onBack }) {
                   className="progress-bar bg-success"
                   role="progressbar"
                   style={{
-                    width: `${(Object.keys(selectedAnswers).length / quiz.questions.length) * 100}%`,
+                    width: `${
+                      (Object.keys(selectedAnswers).length /
+                        quiz.questions.length) *
+                      100
+                    }%`,
                     transition: "width 0.3s ease",
                   }}
                 ></div>
@@ -359,7 +407,8 @@ function ResumeQuiz({ onBack }) {
                       <span
                         className={`badge fs-6 px-3 py-2 ${
                           showAnswers
-                            ? selectedAnswers[questionIndex] === question.answer_index
+                            ? selectedAnswers[questionIndex] ===
+                              question.answer_index
                               ? "bg-success"
                               : selectedAnswers[questionIndex] !== undefined
                               ? "bg-danger"
@@ -373,7 +422,10 @@ function ResumeQuiz({ onBack }) {
                       </span>
                     </div>
                     <div className="flex-grow-1">
-                      <h6 className="fw-bold mb-2 text-dark" style={{ fontSize: "1.1rem", lineHeight: "1.4" }}>
+                      <h6
+                        className="fw-bold mb-2 text-dark"
+                        style={{ fontSize: "1.1rem", lineHeight: "1.4" }}
+                      >
                         {question.q}
                       </h6>
                       {question.category && (
@@ -389,12 +441,15 @@ function ResumeQuiz({ onBack }) {
 
                   <div className="row g-3">
                     {question.options.map((option, optionIndex) => {
-                      const isSelected = selectedAnswers[questionIndex] === optionIndex;
+                      const isSelected =
+                        selectedAnswers[questionIndex] === optionIndex;
                       const isCorrect = optionIndex === question.answer_index;
                       const shouldShowCorrect = showAnswers && isCorrect;
-                      const shouldShowWrong = showAnswers && isSelected && !isCorrect;
+                      const shouldShowWrong =
+                        showAnswers && isSelected && !isCorrect;
 
-                      let buttonClass = "btn text-start w-100 d-flex align-items-center p-3 border-2";
+                      let buttonClass =
+                        "btn text-start w-100 d-flex align-items-center p-3 border-2";
                       let iconClass = "";
 
                       if (shouldShowCorrect) {
@@ -414,15 +469,22 @@ function ResumeQuiz({ onBack }) {
                         <div key={optionIndex} className="col-md-6">
                           <button
                             className={buttonClass}
-                            onClick={() => selectAnswer(questionIndex, optionIndex)}
+                            onClick={() =>
+                              selectAnswer(questionIndex, optionIndex)
+                            }
                             disabled={showAnswers}
-                            style={{ minHeight: "60px", transition: "all 0.2s ease" }}
+                            style={{
+                              minHeight: "60px",
+                              transition: "all 0.2s ease",
+                            }}
                           >
                             {iconClass && <i className={iconClass}></i>}
                             <span className="badge bg-dark text-white me-3 flex-shrink-0">
                               {String.fromCharCode(65 + optionIndex)}
                             </span>
-                            <span className="flex-grow-1 fw-medium">{option}</span>
+                            <span className="flex-grow-1 fw-medium">
+                              {option}
+                            </span>
                           </button>
                         </div>
                       );
@@ -436,9 +498,13 @@ function ResumeQuiz({ onBack }) {
             {!showAnswers && (
               <div className="text-center mt-4">
                 {Object.keys(selectedAnswers).length < quiz.questions.length ? (
-                  <button className="btn btn-outline-primary btn-lg px-4" disabled>
+                  <button
+                    className="btn btn-outline-primary btn-lg px-4"
+                    disabled
+                  >
                     <i className="bi bi-lock-fill me-2"></i>
-                    Submit Quiz ({Object.keys(selectedAnswers).length}/{quiz.questions.length})
+                    Submit Quiz ({Object.keys(selectedAnswers).length}/
+                    {quiz.questions.length})
                   </button>
                 ) : (
                   <button
@@ -455,7 +521,13 @@ function ResumeQuiz({ onBack }) {
             {/* Results */}
             {showAnswers && (
               <div className="card mt-4 border-0 shadow-sm">
-                <div className="card-header text-white" style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+                <div
+                  className="card-header text-white"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  }}
+                >
                   <div className="text-center">
                     <h4 className="mb-2 text-white">
                       <i className="bi bi-trophy-fill me-2"></i>
@@ -463,29 +535,54 @@ function ResumeQuiz({ onBack }) {
                     </h4>
                     <div className="row text-center">
                       <div className="col-4">
-                        <div className="h2 mb-1 fw-bold" style={{ color: "white !important" }}>{getScore().correct}</div>
-                        <small style={{ color: "rgba(255,255,255,0.8)" }}>Correct</small>
+                        <div
+                          className="h2 mb-1 fw-bold"
+                          style={{ color: "white !important" }}
+                        >
+                          {getScore().correct}
+                        </div>
+                        <small style={{ color: "rgba(255,255,255,0.8)" }}>
+                          Correct
+                        </small>
                       </div>
                       <div className="col-4">
-                        <div className="h2 mb-1 fw-bold" style={{ color: "white !important" }}>{getScore().percentage}%</div>
-                        <small style={{ color: "rgba(255,255,255,0.8)" }}>Score</small>
+                        <div
+                          className="h2 mb-1 fw-bold"
+                          style={{ color: "white !important" }}
+                        >
+                          {getScore().percentage}%
+                        </div>
+                        <small style={{ color: "rgba(255,255,255,0.8)" }}>
+                          Score
+                        </small>
                       </div>
                       <div className="col-4">
-                        <div className="h2 mb-1 fw-bold" style={{ color: "white !important" }}>{getScore().total}</div>
-                        <small style={{ color: "rgba(255,255,255,0.8)" }}>Total</small>
+                        <div
+                          className="h2 mb-1 fw-bold"
+                          style={{ color: "white !important" }}
+                        >
+                          {getScore().total}
+                        </div>
+                        <small style={{ color: "rgba(255,255,255,0.8)" }}>
+                          Total
+                        </small>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="card-body text-center">
                   <p className="text-muted mb-4">
-                    Great job! This assessment was based on the skills and experience from your resume.
+                    Great job! This assessment was based on the skills and
+                    experience from your resume.
                   </p>
                   <button className="btn btn-primary me-3" onClick={resetQuiz}>
                     <i className="bi bi-arrow-repeat me-2"></i>
                     Try Another Resume
                   </button>
-                  <button className="btn btn-outline-secondary" onClick={onBack}>
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={onBack}
+                  >
                     <i className="bi bi-house me-2"></i>
                     Back to Home
                   </button>

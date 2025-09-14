@@ -8,7 +8,10 @@ function HeroPage({ onSelectQuizType }) {
           <div className="col-lg-10 col-xl-8">
             {/* Hero Header */}
             <div className="text-center mb-5">
-              <h1 className="display-2 fw-bold mb-4" style={{ color: "white !important" }}>
+              <h1
+                className="display-2 fw-bold mb-4"
+                style={{ color: "white !important" }}
+              >
                 TpicQ
                 <span className="text-warning">.</span>
               </h1>
@@ -27,45 +30,62 @@ function HeroPage({ onSelectQuizType }) {
                 <div className="card h-100 shadow-lg border-0 overflow-hidden">
                   <div className="card-body p-5 text-center position-relative">
                     <div className="mb-4">
-                      <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: "80px", height: "80px" }}>
-                        <i className="bi bi-file-earmark-person-fill text-primary" style={{ fontSize: "2.5rem" }}></i>
+                      <div
+                        className="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center"
+                        style={{ width: "80px", height: "80px" }}
+                      >
+                        <i
+                          className="bi bi-file-earmark-person-fill text-primary"
+                          style={{ fontSize: "2.5rem" }}
+                        ></i>
                       </div>
                     </div>
-                    
-                    <h3 className="card-title fw-bold mb-3 text-dark">Resume Quiz</h3>
+
+                    <h3 className="card-title fw-bold mb-3 text-dark">
+                      Resume Quiz
+                    </h3>
                     <p className="card-text text-muted mb-4 fs-6">
-                      Upload your resume and get a personalized 30-question quiz based on your skills and experience
+                      Upload your resume and get a personalized 30-question quiz
+                      based on your skills and experience
                     </p>
-                    
+
                     <div className="mb-4">
                       <div className="row g-2 text-start">
                         <div className="col-12">
                           <div className="d-flex align-items-center">
                             <i className="bi bi-check-circle-fill text-success me-2"></i>
-                            <small className="text-muted">Personalized skill assessment</small>
+                            <small className="text-muted">
+                              Personalized skill assessment
+                            </small>
                           </div>
                         </div>
                         <div className="col-12">
                           <div className="d-flex align-items-center">
                             <i className="bi bi-check-circle-fill text-success me-2"></i>
-                            <small className="text-muted">30 targeted questions</small>
+                            <small className="text-muted">
+                              30 targeted questions
+                            </small>
                           </div>
                         </div>
                         <div className="col-12">
                           <div className="d-flex align-items-center">
                             <i className="bi bi-check-circle-fill text-success me-2"></i>
-                            <small className="text-muted">PDF & DOCX support</small>
+                            <small className="text-muted">
+                              PDF & DOCX support
+                            </small>
                           </div>
                         </div>
                         <div className="col-12">
                           <div className="d-flex align-items-center">
                             <i className="bi bi-check-circle-fill text-success me-2"></i>
-                            <small className="text-muted">Interview preparation</small>
+                            <small className="text-muted">
+                              Interview preparation
+                            </small>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
+
                     <button
                       className="btn btn-primary btn-lg w-100 shadow-sm"
                       onClick={() => onSelectQuizType("resume")}
@@ -82,45 +102,62 @@ function HeroPage({ onSelectQuizType }) {
                 <div className="card h-100 shadow-lg border-0 overflow-hidden">
                   <div className="card-body p-5 text-center position-relative">
                     <div className="mb-4">
-                      <div className="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: "80px", height: "80px" }}>
-                        <i className="bi bi-puzzle-fill text-success" style={{ fontSize: "2.5rem" }}></i>
+                      <div
+                        className="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center"
+                        style={{ width: "80px", height: "80px" }}
+                      >
+                        <i
+                          className="bi bi-puzzle-fill text-success"
+                          style={{ fontSize: "2.5rem" }}
+                        ></i>
                       </div>
                     </div>
-                    
-                    <h3 className="card-title fw-bold mb-3 text-dark">Custom Quiz</h3>
+
+                    <h3 className="card-title fw-bold mb-3 text-dark">
+                      Custom Quiz
+                    </h3>
                     <p className="card-text text-muted mb-4 fs-6">
-                      Choose your own topics and difficulty level for a customized learning experience
+                      Choose your own topics and difficulty level for a
+                      customized learning experience
                     </p>
-                    
+
                     <div className="mb-4">
                       <div className="row g-2 text-start">
                         <div className="col-12">
                           <div className="d-flex align-items-center">
                             <i className="bi bi-check-circle-fill text-success me-2"></i>
-                            <small className="text-muted">Choose up to 3 topics</small>
+                            <small className="text-muted">
+                              Choose up to 3 topics
+                            </small>
                           </div>
                         </div>
                         <div className="col-12">
                           <div className="d-flex align-items-center">
                             <i className="bi bi-check-circle-fill text-success me-2"></i>
-                            <small className="text-muted">3 difficulty levels</small>
+                            <small className="text-muted">
+                              3 difficulty levels
+                            </small>
                           </div>
                         </div>
                         <div className="col-12">
                           <div className="d-flex align-items-center">
                             <i className="bi bi-check-circle-fill text-success me-2"></i>
-                            <small className="text-muted">10 questions per topic</small>
+                            <small className="text-muted">
+                              10 questions per topic
+                            </small>
                           </div>
                         </div>
                         <div className="col-12">
                           <div className="d-flex align-items-center">
                             <i className="bi bi-check-circle-fill text-success me-2"></i>
-                            <small className="text-muted">Any subject area</small>
+                            <small className="text-muted">
+                              Any subject area
+                            </small>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
+
                     <button
                       className="btn btn-success btn-lg w-100 shadow-sm"
                       onClick={() => onSelectQuizType("custom")}

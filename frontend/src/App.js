@@ -26,11 +26,7 @@ function App() {
     }
   };
 
-  return (
-    <div className="App">
-      {renderCurrentView()}
-    </div>
-  );
+  return <div className="App">{renderCurrentView()}</div>;
 }
 
 export default App;

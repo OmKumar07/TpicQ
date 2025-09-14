@@ -108,7 +108,9 @@ function CustomQuiz({ onBack }) {
           await axios.post(`${API_BASE}/topics`, { name: topic });
         } catch (topicError) {
           if (topicError.response?.status !== 400) {
-            throw new Error(`Failed to create topic "${topic}": ${topicError.message}`);
+            throw new Error(
+              `Failed to create topic "${topic}": ${topicError.message}`
+            );
           }
         }
 
@@ -198,7 +200,8 @@ function CustomQuiz({ onBack }) {
       if (err.code === "NETWORK_ERROR" || !navigator.onLine) {
         errorMessage = "Network error. Please check your internet connection.";
       } else if (err.response?.status === 404) {
-        errorMessage = "API endpoint not found. Please check if the server is running.";
+        errorMessage =
+          "API endpoint not found. Please check if the server is running.";
       } else if (err.response?.status === 500) {
         errorMessage = "Server error. Please try again later.";
       } else if (err.response?.data?.detail) {
@@ -249,7 +252,9 @@ function CustomQuiz({ onBack }) {
         </button>
         <div>
           <h1 className="h2 fw-bold text-primary mb-1">Custom Quiz</h1>
-          <p className="text-muted mb-0">Choose your topics and create a personalized quiz</p>
+          <p className="text-muted mb-0">
+            Choose your topics and create a personalized quiz
+          </p>
         </div>
       </div>
 
@@ -418,9 +423,7 @@ function CustomQuiz({ onBack }) {
           <div className="spinner-border text-primary mb-3" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="text-muted">
-            AI is generating your custom quiz...
-          </p>
+          <p className="text-muted">AI is generating your custom quiz...</p>
         </div>
       )}
 
